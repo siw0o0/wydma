@@ -19,6 +19,12 @@ PlasmoidItem {
     property var up: []
 
     Plasmoid.backgroundHints: PlasmaCore.Types.NoBackground
+
+    // Skrót z menu programów zapisuje nową wartość openSettings, a widżet otwiera wtedy swoje ustawienia.
+    property bool ready: false
+    Component.onCompleted: ready = true
+    readonly property string openSettings: cfg.openSettings
+    onOpenSettingsChanged: if (ready && openSettings !== "") Plasmoid.internalAction("configure").trigger()
     preferredRepresentation: fullRepresentation
 
     Theme {

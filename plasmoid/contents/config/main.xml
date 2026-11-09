@@ -192,5 +192,9 @@
     <entry name="procCount" type="Int">
       <default>4</default>
     </entry>
+    <!-- Zmiana tej wartości otwiera okno ustawień: tak robi to skrót „Wydma” z menu programów. -->
+    <entry name="openSettings" type="String">
+      <default></default>
+    </entry>
   </group>
 </kcfg>

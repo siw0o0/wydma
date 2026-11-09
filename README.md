@@ -34,9 +34,11 @@ cd wydma
 
 Then add **Wydma** to the desktop from *Add Widgets…*, and place and size it in edit mode.
 
+The installer also adds a **Wydma** entry to the application menu that opens the widget's settings. For a shortcut on the desktop as well, run `./install.sh --desktop-icon`.
+
 ## Settings
 
-Right-click the widget and choose *Configure Wydma…*
+Right-click the widget and choose *Configure Wydma…*, or start **Wydma** from the application menu (`wydma-settings` from a terminal).
 
 - **Cards**: which cards are shown and in what order.
 - **Look**: seven colour sets (four dark, two light, one following the Plasma colour scheme) with a live preview, card opacity, corner radius, shadow, title style, and the language.

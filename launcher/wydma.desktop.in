@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Name=Wydma
+GenericName=Desktop widget settings
+GenericName[pl]=Ustawienia widżetu pulpitu
+Comment=Open the settings of the Wydma desktop widget
+Comment[pl]=Otwiera ustawienia widżetu Wydma na pulpicie
+Exec=@EXEC@
+Icon=wydma
+Terminal=false
+Categories=Settings;
+Keywords=wydma;widma;dune;widget;widżet;pulpit;desktop;ustawienia;settings;
+StartupNotify=false
