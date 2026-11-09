@@ -2,7 +2,8 @@
 # Opens the settings of the Wydma widget that sits on the desktop. A desktop widget has no window
 # of its own, so this asks Plasma to change one value in the widget's configuration, and the widget
 # answers by opening its settings dialog. WYDMA_WIDGET names another widget id than "wydma".
-id=${WYDMA_WIDGET:-wydma}
+# The id goes into a script, so only the characters a widget id can have are kept.
+id=$(printf '%s' "${WYDMA_WIDGET:-wydma}" | tr -cd 'A-Za-z0-9._-')
 js="var n = 0; desktops().forEach(function (d) { d.widgets().forEach(function (w) { if (n == 0 && w.type == '$id') { w.currentConfigGroup = ['General']; w.writeConfig('openSettings', String(Date.now())); n++; } }); }); print(n);"
 found=$(dbus-send --session --print-reply=literal --dest=org.kde.plasmashell /PlasmaShell \
   org.kde.PlasmaShell.evaluateScript string:"$js" 2>/dev/null | tr -cd '0-9')

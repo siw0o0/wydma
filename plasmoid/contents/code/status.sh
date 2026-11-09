@@ -19,7 +19,8 @@ profile=$(busctl get-property org.freedesktop.UPower.PowerProfiles /org/freedesk
 [ -n "$profile" ] || profile=$(powerprofilesctl get 2>/dev/null)
 
 active=$(nmcli -t -f TYPE,NAME con show --active 2>/dev/null)
-vpn=$(echo "$active" | awk -F: '$1=="wireguard"||$1=="vpn"{print $2; exit}')
+# Nazwa trafia do JSON-a, więc cudzysłów i ukośnik dostają ukośnik.
+vpn=$(echo "$active" | sed -n -E 's/^(wireguard|vpn)://p' | head -1 | sed 's/\\:/:/g; s/\\/\\\\/g; s/"/\\"/g')
 # Kill switch Protona: interfejs pvpn-killswitch. Bez tunelu oznacza blokadę internetu.
 ks=$(echo "$active" | grep -q '^dummy:pvpn-killswitch' && echo 1 || echo 0)
 off=$( [ -f "${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/protonvpn-manual-off" ] && echo 1 || echo 0)
