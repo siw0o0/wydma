@@ -317,8 +317,8 @@ PlasmoidItem {
         property string value
         Layout.fillWidth: true
         spacing: 10
-        Text { text: parent.name; color: pal.muted; font.pixelSize: 12 }
-        Text { text: parent.value; color: pal.ink; font.pixelSize: 12; font.weight: Font.Medium; elide: Text.ElideRight; horizontalAlignment: Text.AlignRight; Layout.fillWidth: true }
+        Txt { text: parent.name; color: pal.muted; font.pixelSize: 12 }
+        Txt { text: parent.value; color: pal.ink; font.pixelSize: 12; font.weight: Font.Medium; elide: Text.ElideRight; horizontalAlignment: Text.AlignRight; Layout.fillWidth: true }
     }
 
     // Zegar
@@ -333,14 +333,14 @@ PlasmoidItem {
                 id: clockCol
                 x: parent.leftSide ? 6 : parent.width - width - 6
                 spacing: -4
-                Text {
+                Txt {
                     Layout.alignment: parent.parent.leftSide ? Qt.AlignLeft : Qt.AlignRight
                     text: Qt.formatTime(root.now, root.cfg.clock12 ? (root.cfg.seconds ? "h:mm:ss AP" : "h:mm AP") : (root.cfg.seconds ? "HH:mm:ss" : "HH:mm"))
                     color: root.cfg.darkClock ? "#2a2018" : "white"
                     font.pixelSize: root.cfg.clockSize; font.weight: Font.Light; font.features: { "tnum": 1 }
                     style: Text.Raised; styleColor: root.cfg.darkClock ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(0.25, 0.15, 0.05, 0.25)
                 }
-                Text {
+                Txt {
                     Layout.alignment: parent.parent.leftSide ? Qt.AlignLeft : Qt.AlignRight
                     visible: root.cfg.showDate
                     text: root.cfg.dateFormat === "iso" ? Qt.formatDate(root.now, "yyyy-MM-dd")
@@ -385,24 +385,24 @@ PlasmoidItem {
                     visible: !!classCard.cur && !!classCard.cur.forma
                     implicitWidth: 34; implicitHeight: 34; radius: 10
                     color: pal.tint(pal.teal, 0.16)
-                    Text { anchors.centerIn: parent; text: classCard.cur ? classCard.cur.forma || "" : ""; color: pal.teal; font.pixelSize: 15; font.weight: Font.DemiBold }
+                    Txt { anchors.centerIn: parent; text: classCard.cur ? classCard.cur.forma || "" : ""; color: pal.teal; font.pixelSize: 15; font.weight: Font.DemiBold }
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
                     spacing: 2
-                    Text {
+                    Txt {
                         Layout.fillWidth: true
                         text: classCard.cur ? classCard.cur.przedmiot : ""
                         color: pal.ink; font.pixelSize: 15; font.weight: Font.Medium
                         wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
                     }
-                    Text {
+                    Txt {
                         Layout.fillWidth: true
                         text: classCard.cur ? root.dayName(classCard.cur.start) + " " + root.hm(classCard.cur.start) + "–" + root.hm(classCard.cur.koniec)
                             + (classCard.cur.forma ? " · " + root.formName(classCard.cur.forma) : "") : ""
                         color: pal.muted; font.pixelSize: 12
                     }
-                    Text {
+                    Txt {
                         Layout.fillWidth: true
                         readonly property var where: classCard.cur ? [classCard.cur.sala ? root.tr("sala %1", classCard.cur.sala) : "", classCard.cur.budynek, classCard.cur.uwaga].filter(p => p) : []
                         visible: where.length > 0
@@ -427,23 +427,23 @@ PlasmoidItem {
                     readonly property var cls: classCard.list[index + 1] || null
                     Layout.fillWidth: true
                     spacing: 8
-                    Text {
+                    Txt {
                         text: cls ? root.dayName(cls.start) + " " + root.hm(cls.start) : ""
                         color: pal.muted; font.pixelSize: 12; font.features: { "tnum": 1 }
                         Layout.preferredWidth: 88
                     }
-                    Text { text: cls ? cls.przedmiot + (cls.forma ? " (" + cls.forma + ")" : "") : ""; color: pal.ink; font.pixelSize: 12; elide: Text.ElideRight; Layout.fillWidth: true }
-                    Text { text: cls ? cls.sala || "" : ""; color: pal.faint; font.pixelSize: 12 }
+                    Txt { text: cls ? cls.przedmiot + (cls.forma ? " (" + cls.forma + ")" : "") : ""; color: pal.ink; font.pixelSize: 12; elide: Text.ElideRight; Layout.fillWidth: true }
+                    Txt { text: cls ? cls.sala || "" : ""; color: pal.faint; font.pixelSize: 12 }
                 }
             }
-            Text {
+            Txt {
                 visible: !classCard.cur
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 text: root.tr("Nic zaplanowanego.")
                 color: pal.muted; font.pixelSize: 12
             }
-            Text {
+            Txt {
                 visible: !!root.plan && !!root.plan.pobrano && root.now - Date.parse(root.plan.pobrano) > 3 * 86400000
                 Layout.fillWidth: true
                 text: visible ? root.tr("plan z %1, do odświeżenia", new Date(Date.parse(root.plan.pobrano)).toLocaleDateString(root.loc, "d.MM")) : ""
@@ -476,7 +476,7 @@ PlasmoidItem {
                     barHeight: 8
                 }
             }
-            Text {
+            Txt {
                 visible: !claude.usage
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
@@ -537,9 +537,9 @@ PlasmoidItem {
             note: root.cfg.netIface && root.cfg.netIface !== "all" ? root.cfg.netIface : ""
             RowLayout {
                 Layout.fillWidth: true
-                Text { text: "↓ " + root.speed(root.num(netDown)); color: pal.sky; font.pixelSize: 15; font.weight: Font.Medium; font.features: { "tnum": 1 } }
+                Txt { text: "↓ " + root.speed(root.num(netDown)); color: pal.sky; font.pixelSize: 15; font.weight: Font.Medium; font.features: { "tnum": 1 } }
                 Item { Layout.fillWidth: true }
-                Text { text: "↑ " + root.speed(root.num(netUp)); color: pal.clay; font.pixelSize: 15; font.weight: Font.Medium; font.features: { "tnum": 1 } }
+                Txt { text: "↑ " + root.speed(root.num(netUp)); color: pal.clay; font.pixelSize: 15; font.weight: Font.Medium; font.features: { "tnum": 1 } }
             }
             Spark { Layout.fillWidth: true; visible: root.cfg.netGraph; series: [root.down, root.up]; colors: [pal.sky, pal.clay] }
             clickable: root.cfg.clickActions
@@ -564,16 +564,16 @@ PlasmoidItem {
             RowLayout {
                 Layout.fillWidth: true
                 visible: power.hasBat
-                Text {
+                Txt {
                     text: (power.ac ? "🔌 " + root.tr("Zasilacz") : "🔋 " + root.tr("Bateria"))
                         + (!power.ac && root.status.watts > 0.5 ? " · " + root.dec(root.status.watts, 1) + " W" : "")
                     color: pal.ink; font.pixelSize: 13; font.weight: Font.Medium
                 }
                 Item { Layout.fillWidth: true }
-                Text { text: root.pct(power.bat); color: power.bat <= 15 ? pal.alert : power.bat <= 30 ? pal.warn : pal.ink; font.pixelSize: 13; font.weight: Font.DemiBold }
+                Txt { text: root.pct(power.bat); color: power.bat <= 15 ? pal.alert : power.bat <= 30 ? pal.warn : pal.ink; font.pixelSize: 13; font.weight: Font.DemiBold }
             }
             Bar { Layout.fillWidth: true; visible: power.hasBat; implicitHeight: 6; value: power.bat; color: power.bat <= 15 ? pal.alert : power.bat <= 30 ? pal.warn : pal.sage; track: pal.track }
-            Text {
+            Txt {
                 visible: !power.hasBat && !power.hasHeadset
                 text: "🔌 " + root.tr("Zasilanie sieciowe")
                 color: pal.ink; font.pixelSize: 13; font.weight: Font.Medium
@@ -588,7 +588,7 @@ PlasmoidItem {
                 accent: pal.gold
                 onPicked: (arg, label) => root.setCharge(arg, label)
             }
-            Text {
+            Txt {
                 Layout.fillWidth: true
                 visible: root.status.hasCharge === 1
                 wrapMode: Text.WordWrap
@@ -602,8 +602,8 @@ PlasmoidItem {
             RowLayout {
                 Layout.fillWidth: true
                 visible: power.hasHeadset
-                Text { text: "🎧 " + (root.status.headset || root.tr("Słuchawki")); color: pal.ink; font.pixelSize: 13; elide: Text.ElideRight; Layout.fillWidth: true }
-                Text {
+                Txt { text: "🎧 " + (root.status.headset || root.tr("Słuchawki")); color: pal.ink; font.pixelSize: 13; elide: Text.ElideRight; Layout.fillWidth: true }
+                Txt {
                     readonly property real charge: root.status.headsetPct || 0
                     text: root.pct(charge); color: charge <= 15 ? pal.alert : charge <= 30 ? pal.warn : pal.ink; font.pixelSize: 13; font.weight: Font.DemiBold
                 }
@@ -633,7 +633,7 @@ PlasmoidItem {
                 accent: pal.sage
                 onPicked: (arg, label) => root.setGpu(arg)
             }
-            Text {
+            Txt {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 readonly property string missed: root.status.gpuFail || ""
@@ -667,15 +667,15 @@ PlasmoidItem {
             RowLayout {
                 Layout.fillWidth: true
                 spacing: 12
-                Text {
+                Txt {
                     text: vpn.on ? "🛡" : "○"
                     color: vpn.on ? pal.sage : pal.faint
                     font.pixelSize: 22
                 }
                 Column {
                     Layout.fillWidth: true
-                    Text { text: !vpn.on ? root.tr("Bez VPN-a") : vpn.proton ? root.tr("Chroniony") : root.tr("Połączono"); color: pal.ink; font.pixelSize: 15; font.weight: Font.Medium }
-                    Text {
+                    Txt { text: !vpn.on ? root.tr("Bez VPN-a") : vpn.proton ? root.tr("Chroniony") : root.tr("Połączono"); color: pal.ink; font.pixelSize: 15; font.weight: Font.Medium }
+                    Txt {
                         visible: text !== ""
                         text: !root.vpnTool ? (vpn.on ? root.tr("ruch idzie szyfrowanym tunelem") : "")
                             : !vpn.on ? root.tr("wraca sam po zmianie sieci")
@@ -720,8 +720,8 @@ PlasmoidItem {
                     RowLayout {
                         anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
                         spacing: 8
-                        Text { text: modelData; color: pal.ink; font.pixelSize: 12; font.weight: active ? Font.DemiBold : Font.Normal; elide: Text.ElideRight; Layout.fillWidth: true }
-                        Text { text: picking ? root.tr("łączenie…") : active ? "✓ " + root.tr("połączono") : ""; color: active ? pal.sage : pal.faint; font.pixelSize: 11 }
+                        Txt { text: modelData; color: pal.ink; font.pixelSize: 12; font.weight: active ? Font.DemiBold : Font.Normal; elide: Text.ElideRight; Layout.fillWidth: true }
+                        Txt { text: picking ? root.tr("łączenie…") : active ? "✓ " + root.tr("połączono") : ""; color: active ? pal.sage : pal.faint; font.pixelSize: 11 }
                     }
                     MouseArea {
                         anchors.fill: parent
@@ -731,7 +731,7 @@ PlasmoidItem {
                     }
                 }
             }
-            Text {
+            Txt {
                 Layout.fillWidth: true
                 visible: root.vpnFailed !== ""
                 wrapMode: Text.WordWrap
@@ -745,7 +745,7 @@ PlasmoidItem {
                 implicitHeight: ksText.implicitHeight + 14
                 radius: 10
                 color: pal.tint(vpn.blocking ? pal.alert : pal.warn, 0.14)
-                Text {
+                Txt {
                     id: ksText
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 10; rightMargin: 10 }
                     wrapMode: Text.WordWrap
@@ -814,7 +814,7 @@ PlasmoidItem {
             shown: root.cfg.notes !== ""
             title: root.cfg.notesTitle || root.tr("Notatka")
             accent: pal.gold
-            Text {
+            Txt {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 text: root.cfg.notes
@@ -831,7 +831,7 @@ PlasmoidItem {
             shown: root.cfg.customCommand !== ""
             title: root.cfg.customTitle || root.tr("Własny")
             accent: pal.clay
-            Text {
+            Txt {
                 Layout.fillWidth: true
                 wrapMode: Text.WrapAnywhere
                 text: root.customText || "…"
@@ -857,7 +857,12 @@ PlasmoidItem {
         // kolumny (co najmniej 300 px) mieszczą się na szerokość, a kafelki na wysokość, i bierze najlepszą.
         // Skala z ustawień jest górną granicą; przy remisie wygrywa więcej kolumn, więc szeroki widżet
         // rozkłada kafelki obok siebie, a na małym ekranie całość się zmniejsza zamiast wystawać.
-        readonly property var layout: {
+        // Skala zmienia szerokość kafelków, a więc łamanie tekstu i ich wysokość, od której sama zależy.
+        // Dlatego układ ustawia się krokami, nie wiązaniem: zmniejsza się od razu, a rośnie dopiero
+        // przy wyraźnym zysku, więc nie skacze między dwoma stanami.
+        property int cols: 1
+        property real fitted: user
+        function relayout() {
             var count = Math.max(1, root.cards.length), best = { cols: 1, scale: 0 };
             var from = root.cfg.columns > 0 ? Math.min(root.cfg.columns, count) : 1;
             var to = root.cfg.columns > 0 ? from : Math.min(count, 8);
@@ -869,12 +874,29 @@ PlasmoidItem {
                 var s = Math.min(user, byWidth, byHeight);
                 if (s >= best.scale - 0.001) best = { cols: c, scale: s };
             }
-            return { cols: best.cols, scale: Math.max(0.2, best.scale) };
+            var next = Math.max(0.2, best.scale);
+            if (best.cols !== cols) { cols = best.cols; fitted = next; }
+            else if (next < fitted - 0.005 || next > fitted * 1.06 || next >= user) fitted = next;
         }
-        readonly property int cols: layout.cols
+        Timer { id: settle; interval: 120; onTriggered: rep.relayout() }
+        onWidthChanged: settle.restart()
+        onHeightChanged: settle.restart()
+        onTotalChanged: settle.restart()
+        onUserChanged: settle.restart()
+        Connections {
+            target: root
+            function onCardsChanged() { settle.restart(); }
+        }
+        Connections {
+            target: root.cfg
+            function onColumnsChanged() { settle.restart(); }
+            function onFitHeightChanged() { settle.restart(); }
+            function onSpacingChanged() { settle.restart(); }
+        }
+        Component.onCompleted: settle.restart()
         readonly property int perCol: Math.ceil(root.cards.length / cols)
         // Kolumny nie są równej wysokości, więc ostatnia poprawka pilnuje, żeby nic nie wyszło poza dół.
-        readonly property real fit: root.cfg.fitHeight && height > 0 && grid.implicitHeight * layout.scale > height ? height / (grid.implicitHeight * layout.scale) : 1
+        readonly property real fit: root.cfg.fitHeight && height > 0 && grid.implicitHeight * fitted > height ? height / (grid.implicitHeight * fitted) : 1
         Layout.preferredWidth: (330 * Math.max(1, root.cfg.columns) + gap * Math.max(0, root.cfg.columns - 1)) * user
         Layout.minimumWidth: 160
         Layout.preferredHeight: grid.implicitHeight * user
@@ -882,10 +904,10 @@ PlasmoidItem {
         Row {
             id: grid
             readonly property bool leftSide: root.cfg.align === "left"
-            width: rep.width / rep.layout.scale
+            width: rep.width / rep.fitted
             x: leftSide ? 0 : rep.width - width
             spacing: rep.gap
-            scale: rep.layout.scale * rep.fit
+            scale: rep.fitted * rep.fit
             transformOrigin: leftSide ? Item.TopLeft : Item.TopRight
             Repeater {
                 id: columns

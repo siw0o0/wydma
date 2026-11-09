@@ -39,9 +39,9 @@ Item {
         id: head
         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 14; topMargin: 12 }
         Rectangle { width: 7; height: 7; radius: 4; color: card.accent }
-        Text { text: card.title; color: theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: theme.upperTitles ? 1.4 : 0.3; font.capitalization: theme.upperTitles ? Font.AllUppercase : Font.MixedCase; elide: Text.ElideRight; Layout.maximumWidth: card.width * 0.6 }
+        Txt { text: card.title; color: theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: theme.upperTitles ? 1.4 : 0.3; font.capitalization: theme.upperTitles ? Font.AllUppercase : Font.MixedCase; elide: Text.ElideRight; Layout.maximumWidth: card.width * 0.6 }
         Item { Layout.fillWidth: true }
-        Text { text: card.note; color: theme.faint; font.pixelSize: 11; elide: Text.ElideRight; Layout.maximumWidth: card.width * 0.55 }
+        Txt { text: card.note; color: theme.faint; font.pixelSize: 11; elide: Text.ElideRight; Layout.maximumWidth: card.width * 0.55 }
     }
     ColumnLayout {
         id: body

@@ -41,7 +41,7 @@ The installer also adds a **Wydma** entry to the application menu that opens the
 Right-click the widget and choose *Configure Wydma…*, or start **Wydma** from the application menu (`wydma-settings` from a terminal).
 
 - **Cards**: which cards are shown and in what order.
-- **Look**: seven colour sets (four dark, two light, one following the Plasma colour scheme) with a live preview, card opacity, corner radius, shadow, title style, and the language.
+- **Look**: seven colour sets (four dark, two light, one following the Plasma colour scheme) with a live preview, card opacity, corner radius, shadow, title style, the font, and the language.
 - **Layout**: scale from 50% to 200%, one to four columns or automatic, which edge the widget hugs, the space between cards.
 - **Clock**: 12/24 hours, seconds, digit size, light or dark text, date format.
 - **Sensors**: refresh rate, which graphics card, disk and network interface to read, units (°C/°F, bytes/bits), and the percentages and temperatures at which values turn amber and red.

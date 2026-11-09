@@ -10,6 +10,7 @@ KCM.SimpleKCM {
     id: page
     property string cfg_language
     property string cfg_theme
+    property string cfg_fontFamily
     property alias cfg_cardOpacity: opacitySlider.value
     property alias cfg_radius: radiusSlider.value
     property alias cfg_shadow: shadow.checked
@@ -101,6 +102,14 @@ KCM.SimpleKCM {
                 Kirigami.FormData.label: page.tr("Zaokrąglenie:")
                 QQC2.Slider { id: radiusSlider; from: 0; to: 28; stepSize: 1; Layout.preferredWidth: Kirigami.Units.gridUnit * 12 }
                 QQC2.Label { text: Math.round(radiusSlider.value) + " px"; Layout.minimumWidth: Kirigami.Units.gridUnit * 2 }
+            }
+            QQC2.ComboBox {
+                Kirigami.FormData.label: page.tr("Czcionka:")
+                Layout.preferredWidth: Kirigami.Units.gridUnit * 14
+                readonly property var families: [""].concat(Qt.fontFamilies())
+                model: [page.tr("Systemowa")].concat(Qt.fontFamilies())
+                currentIndex: Math.max(0, families.indexOf(page.cfg_fontFamily))
+                onActivated: page.cfg_fontFamily = families[currentIndex]
             }
             QQC2.CheckBox { id: shadow; Kirigami.FormData.label: page.tr("Kafelki:"); text: page.tr("Cień pod kafelkami") }
             QQC2.CheckBox { id: upper; text: page.tr("Tytuły wersalikami") }

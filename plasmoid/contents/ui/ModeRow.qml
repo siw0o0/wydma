@@ -24,7 +24,7 @@ RowLayout {
             color: active ? row.accent : row.theme.track
             opacity: row.busy ? 0.55 : 1
             Behavior on color { ColorAnimation { duration: 200 } }
-            Text {
+            Txt {
                 anchors.centerIn: parent
                 text: modelData.label
                 color: active ? row.theme.onAccent : row.theme.ink

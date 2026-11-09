@@ -16,10 +16,10 @@ ColumnLayout {
     spacing: 4
 
     RowLayout {
-        Text { text: row.name; color: theme.ink; font.pixelSize: row.nameSize; font.weight: Font.Medium }
+        Txt { text: row.name; color: theme.ink; font.pixelSize: row.nameSize; font.weight: Font.Medium }
         Item { Layout.fillWidth: true }
-        Text { text: row.detail; color: theme.faint; font.pixelSize: 12 }
-        Text {
+        Txt { text: row.detail; color: theme.faint; font.pixelSize: 12 }
+        Txt {
             text: Math.round(row.value) + "%"
             color: theme.level(row.value, theme.ink)
             font.pixelSize: row.nameSize; font.weight: Font.DemiBold

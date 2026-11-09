@@ -22,10 +22,10 @@ Item {
     }
     Column {
         anchors.centerIn: ring
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: Math.round(gauge.value) + "%"; color: theme.ink; font.pixelSize: 24; font.weight: Font.Light; font.features: { "tnum": 1 } }
-        Text { anchors.horizontalCenter: parent.horizontalCenter; text: gauge.name; color: theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.2 }
+        Txt { anchors.horizontalCenter: parent.horizontalCenter; text: Math.round(gauge.value) + "%"; color: theme.ink; font.pixelSize: 24; font.weight: Font.Light; font.features: { "tnum": 1 } }
+        Txt { anchors.horizontalCenter: parent.horizontalCenter; text: gauge.name; color: theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.2 }
     }
-    Text {
+    Txt {
         anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom }
         text: "🌡 " + gauge.tempText
         color: gauge.temp >= gauge.tempAlert ? theme.alert : gauge.temp >= gauge.tempWarn ? theme.warn : theme.muted
