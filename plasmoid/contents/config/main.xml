@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+  <group name="General">
+    <!-- Język interfejsu: auto (według systemu), pl albo en. -->
+    <entry name="language" type="String">
+      <default>auto</default>
+    </entry>
+    <!-- Zestaw kolorów: dune, midnight, forest, graphite, light, paper, system. -->
+    <entry name="theme" type="String">
+      <default>dune</default>
+    </entry>
+    <!-- Krycie tła kafelków w procentach. -->
+    <entry name="cardOpacity" type="Int">
+      <default>86</default>
+    </entry>
+    <!-- Promień zaokrąglenia kafelków. -->
+    <entry name="radius" type="Int">
+      <default>18</default>
+    </entry>
+    <!-- Cień pod kafelkami. -->
+    <entry name="shadow" type="Bool">
+      <default>true</default>
+    </entry>
+    <!-- Tytuły kafelków wersalikami. -->
+    <entry name="upperTitles" type="Bool">
+      <default>true</default>
+    </entry>
+    <!-- Skala całego widżetu w procentach. -->
+    <entry name="scale" type="Int">
+      <default>100</default>
+    </entry>
+    <!-- Liczba kolumn; 0 dobiera ją do miejsca na ekranie. -->
+    <entry name="columns" type="Int">
+      <default>1</default>
+    </entry>
+    <!-- Krawędź, do której widżet się dosuwa: right albo left. -->
+    <entry name="align" type="String">
+      <default>right</default>
+    </entry>
+    <!-- Odstęp między kafelkami. -->
+    <entry name="spacing" type="Int">
+      <default>12</default>
+    </entry>
+    <!-- Zmniejsza całość, gdy nie mieści się na wysokość. -->
+    <entry name="fitHeight" type="Bool">
+      <default>true</default>
+    </entry>
+    <!-- Włączone kafelki w kolejności wyświetlania. -->
+    <entry name="cards" type="String">
+      <default>clock,plan,claude,cpu,memory,network,power,gpumode,vpn</default>
+    </entry>
+    <!-- Zegar 12-godzinny. -->
+    <entry name="clock12" type="Bool">
+      <default>false</default>
+    </entry>
+    <!-- Sekundy na zegarze. -->
+    <entry name="seconds" type="Bool">
+      <default>false</default>
+    </entry>
+    <!-- Data pod zegarem. -->
+    <entry name="showDate" type="Bool">
+      <default>true</default>
+    </entry>
+    <!-- Format daty: long, short albo iso. -->
+    <entry name="dateFormat" type="String">
+      <default>long</default>
+    </entry>
+    <!-- Wielkość cyfr zegara. -->
+    <entry name="clockSize" type="Int">
+      <default>64</default>
+    </entry>
+    <!-- Ciemny tekst zegara, na jasną tapetę. -->
+    <entry name="darkClock" type="Bool">
+      <default>false</default>
+    </entry>
+    <!-- Co ile sekund odświeżają się czujniki. -->
+    <entry name="interval" type="Int">
+      <default>1</default>
+    </entry>
+    <!-- Identyfikator karty w czujnikach systemu; pusty wybiera pierwszą. -->
+    <entry name="gpu" type="String">
+      <default></default>
+    </entry>
+    <!-- Odczyt karty graficznej także na baterii. -->
+    <entry name="gpuOnBattery" type="Bool">
+      <default>false</default>
+    </entry>
+    <!-- Temperatury w stopniach Fahrenheita. -->
+    <entry name="fahrenheit" type="Bool">
+      <default>false</default>
+    </entry>
+    <!-- Prędkość sieci w bitach na sekundę. -->
+    <entry name="netBits" type="Bool">
+      <default>false</default>
+    </entry>
+    <!-- Wykres ruchu w kafelku sieci. -->
+    <entry name="netGraph" type="Bool">
+      <default>true</default>
+    </entry>
+    <!-- Interfejs sieciowy; all sumuje wszystkie. -->
+    <entry name="netIface" type="String">
+      <default>all</default>
+    </entry>
+    <!-- Dysk w kafelku pamięci; all sumuje wszystkie. -->
+    <entry name="disk" type="String">
+      <default>all</default>
+    </entry>
+    <!-- Wiersz pamięci wymiany. -->
+    <entry name="showSwap" type="Bool">
+      <default>false</default>
+    </entry>
+    <!-- Wiersz pamięci karty graficznej. -->
+    <entry name="showVram" type="Bool">
+      <default>true</default>
+    </entry>
+    <!-- Próg ostrzeżenia w procentach. -->
+    <entry name="warnAt" type="Int">
+      <default>80</default>
+    </entry>
+    <!-- Próg alarmu w procentach. -->
+    <entry name="alertAt" type="Int">
+      <default>95</default>
+    </entry>
+    <!-- Temperatura ostrzeżenia w °C. -->
+    <entry name="tempWarn" type="Int">
+      <default>70</default>
+    </entry>
+    <!-- Temperatura alarmu w °C. -->
+    <entry name="tempAlert" type="Int">
+      <default>85</default>
+    </entry>
+    <!-- Kliknięcie kafelka otwiera pasującą aplikację systemu. -->
+    <entry name="clickActions" type="Bool">
+      <default>true</default>
+    </entry>
+    <!-- Plik z limitami Claude; pusty oznacza plik Claudbara. -->
+    <entry name="usageFile" type="String">
+      <default></default>
+    </entry>
+    <!-- Tytuł kafelka planu. -->
+    <entry name="planTitle" type="String">
+      <default></default>
+    </entry>
+    <!-- Polecenie podające plan jako JSON; puste oznacza ~/.config/wydma/plan. -->
+    <entry name="planCommand" type="String">
+      <default></default>
+    </entry>
+    <!-- Polecenie po kliknięciu planu; puste oznacza ~/.config/wydma/plan-open. -->
+    <entry name="planOpen" type="String">
+      <default></default>
+    </entry>
+    <!-- Ile kolejnych pozycji planu pokazać pod bieżącą. -->
+    <entry name="planCount" type="Int">
+      <default>2</default>
+    </entry>
+    <!-- Sieci Wi-Fi bez VPN-a, po przecinku. -->
+    <entry name="novpn" type="String">
+      <default></default>
+    </entry>
+    <!-- Ostrzeżenie o kill switchu w kafelku VPN. -->
+    <entry name="vpnWarning" type="Bool">
+      <default>true</default>
+    </entry>
+    <!-- Tytuł kafelka notatki. -->
+    <entry name="notesTitle" type="String">
+      <default></default>
+    </entry>
+    <!-- Treść notatki. -->
+    <entry name="notes" type="String">
+      <default></default>
+    </entry>
+    <!-- Tytuł własnego kafelka. -->
+    <entry name="customTitle" type="String">
+      <default></default>
+    </entry>
+    <!-- Polecenie, którego wynik pokazuje własny kafelek. -->
+    <entry name="customCommand" type="String">
+      <default></default>
+    </entry>
+    <!-- Co ile sekund uruchamiać polecenie własnego kafelka. -->
+    <entry name="customInterval" type="Int">
+      <default>60</default>
+    </entry>
+    <!-- Nazwa komputera w kafelku systemu. -->
+    <entry name="showHost" type="Bool">
+      <default>true</default>
+    </entry>
+    <!-- Ile programów pokazać w kafelku procesów. -->
+    <entry name="procCount" type="Int">
+      <default>4</default>
+    </entry>
+  </group>
+</kcfg>

@@ -1,10 +1,17 @@
 #!/bin/sh
 # Jedna linia JSON dla widżetu: limity Claude, zasilanie, VPN, słuchawki.
 # Wołany co 10 s, więc bez ciężkich narzędzi: profil zasilania z D-Bus, jedno wywołanie nmcli
-# i jedno upower. Z argumentem "full" dochodzi lista profili VPN (zmienia się rzadko).
+# i jedno upower. Argumenty: "full" dodaje listę profili VPN (zmienia się rzadko), "procs"
+# programy zajmujące najwięcej pamięci. WYDMA_USAGE wskazuje inny plik z limitami Claude.
+# Liczby z kropką, niezależnie od języka systemu.
+export LC_NUMERIC=C
+full=0; procs=0
+for a in "$@"; do case "$a" in full) full=1 ;; procs) procs=1 ;; esac; done
 
 # Limity zapisuje mod Claudbar; starszy plik zostaje jako zapas.
-usage=$(cat "$HOME/.cache/claudbar/usage.json" 2>/dev/null || cat "$HOME/.cache/claude-usage.json" 2>/dev/null)
+usage=$(cat "${WYDMA_USAGE:-$HOME/.cache/claudbar/usage.json}" 2>/dev/null || cat "$HOME/.cache/claude-usage.json" 2>/dev/null)
+# Plik musi być jednym obiektem JSON, inaczej zepsułby całą linię.
+case "$usage" in "{"*"}") ;; *) usage="" ;; esac
 [ -n "$usage" ] || usage=null
 
 profile=$(busctl get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles \
@@ -25,21 +32,51 @@ novpn=0
 [ -n "$wifi" ] && grep -v '^#' "$conf/novpn" 2>/dev/null | tr 'A-Z' 'a-z' | grep -qxF -- "$wifi" && novpn=1
 gpu=$(grep -m1 -E '^gpu/[A-Za-z0-9_]+$' "$conf/gpu" 2>/dev/null)
 
-# Lista wyboru: profile VPN z NetworkManagera, bez profili tworzonych przez Protona.
+# Przełączniki pokazują się tylko tam, gdzie są ich skrypty (katalog helpers w repozytorium).
+hasvpn=$( [ -x "$HOME/.local/bin/protonvpn-auto" ] && echo 1 || echo 0)
+
+# Lista wyboru: profile VPN z NetworkManagera. Ze skryptem protonvpn-auto bez profili Protona,
+# bo nim steruje skrypt; bez niego wszystkie, a widżet łączy je przez nmcli.
 vpns=null
-if [ "$1" = full ]; then
-  vpns="[$(nmcli -t -f NAME,TYPE con show 2>/dev/null | sed -n -E 's/:(vpn|wireguard)$//p' | grep -vE '^(ProtonVPN|pvpn)' | sed 's/\\:/:/g; s/\\/\\\\/g; s/"/\\"/g' | awk 'NR>1{printf ","}{printf "\"%s\"",$0}')]"
+if [ "$full" = 1 ]; then
+  skip='^$'; [ "$hasvpn" = 1 ] && skip='^(ProtonVPN|pvpn)'
+  vpns="[$(nmcli -t -f NAME,TYPE con show 2>/dev/null | sed -n -E 's/:(vpn|wireguard)$//p' | grep -vE "$skip" | sed 's/\\:/:/g; s/\\/\\\\/g; s/"/\\"/g' | awk 'NR>1{printf ","}{printf "\"%s\"",$0}')]"
 fi
 
-bat=$(cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || echo null)
-ac=$(cat /sys/class/power_supply/ADP0/online 2>/dev/null || echo 0)
-# Aktywny tryb ładowania jest w nawiasach: Fast [Standard] Long_Life.
-charge=$(sed -n 's/.*\[\(.*\)\].*/\1/p' /sys/class/power_supply/BAT0/charge_types 2>/dev/null)
+# Bateria komputera (nie myszy czy słuchawek) i zasilacz, pod dowolną nazwą.
+batdir=""; ac=null
+for d in /sys/class/power_supply/*; do
+  case "$(cat "$d/type" 2>/dev/null)" in
+    Battery) [ -z "$batdir" ] && [ "$(cat "$d/scope" 2>/dev/null)" != Device ] && batdir=$d ;;
+    Mains) [ "$ac" = 1 ] || ac=$(cat "$d/online" 2>/dev/null || echo null) ;;
+  esac
+done
+bat=null; charge=""; watts=null; batstate=""
+if [ -n "$batdir" ]; then
+  bat=$(cat "$batdir/capacity" 2>/dev/null || echo null)
+  batstate=$(cat "$batdir/status" 2>/dev/null)
+  # Aktywny tryb ładowania jest w nawiasach: Fast [Standard] Long_Life.
+  charge=$(sed -n 's/.*\[\(.*\)\].*/\1/p' "$batdir/charge_types" 2>/dev/null)
+  # Pobór mocy w watach: power_now (µW) albo prąd razy napięcie.
+  if [ -r "$batdir/power_now" ]; then
+    watts=$(awk '{printf "%.1f", $1/1000000}' "$batdir/power_now")
+  elif [ -r "$batdir/current_now" ] && [ -r "$batdir/voltage_now" ]; then
+    watts=$(awk 'NR==1{c=$1} NR==2{printf "%.1f", c*$1/1000000000000}' "$batdir/current_now" "$batdir/voltage_now")
+  fi
+fi
+# Komputer bez baterii i bez wpisu zasilacza działa z sieci.
+[ "$ac" = null ] && [ -z "$batdir" ] && ac=1
+[ "$ac" = null ] && ac=0
 
-# Przełączniki pokazują się tylko tam, gdzie są ich skrypty (katalog helpers w repozytorium).
 hascharge=$( [ -x /usr/local/sbin/battery-mode ] && [ -n "$charge" ] && echo 1 || echo 0)
 hasgpu=$( [ -x /usr/local/sbin/gpu-mode ] && [ -d /sys/devices/platform/legion ] && echo 1 || echo 0)
-hasvpn=$( [ -x "$HOME/.local/bin/protonvpn-auto" ] && echo 1 || echo 0)
+
+# Programy zajmujące najwięcej pamięci, zsumowane po nazwie (przeglądarka to wiele procesów).
+top=null
+if [ "$procs" = 1 ]; then
+  top="[$(ps -eo rss=,comm= 2>/dev/null | awk '{m[$2]+=$1} END {for (k in m) printf "%d %s\n", m[k], k}' | sort -rn | head -5 |
+    awk '{name=$2; gsub(/["\\]/, "", name); printf("%s{\"name\":\"%s\",\"mb\":%d}", (NR > 1 ? "," : ""), name, $1 / 1024)}')]"
+fi
 
 # Tryb grafiki zapisany w firmware (legion_laptop) i faktycznie aktywny po starcie.
 legion=/sys/devices/platform/legion
@@ -80,5 +117,5 @@ headset=$(upower --dump 2>/dev/null | awk -F': *' '
 hname=${headset% *}; hpct=${headset##* }
 [ -n "$headset" ] || { hname='""'; hpct=null; }
 
-printf '{"usage":%s,"profile":"%s","vpn":"%s","vpns":%s,"ks":%s,"manualOff":%s,"noVpnNet":%s,"gpu":"%s","bat":%s,"ac":%s,"charge":"%s","hasCharge":%s,"hasGpu":%s,"hasVpn":%s,"gpuSet":"%s","gpuNow":"%s","gpuFail":"%s","headset":%s,"headsetPct":%s,"now":%s}\n' \
-  "$usage" "$profile" "$vpn" "$vpns" "$ks" "$off" "$novpn" "${gpu:-gpu/gpu0}" "$bat" "$ac" "$charge" "$hascharge" "$hasgpu" "$hasvpn" "$gpuset" "$gpunow" "$gpufail" "$hname" "$hpct" "$(date +%s%3N)"
+printf '{"usage":%s,"profile":"%s","vpn":"%s","vpns":%s,"ks":%s,"manualOff":%s,"noVpnNet":%s,"gpu":"%s","bat":%s,"ac":%s,"watts":%s,"batState":"%s","top":%s,"charge":"%s","hasCharge":%s,"hasGpu":%s,"hasVpn":%s,"gpuSet":"%s","gpuNow":"%s","gpuFail":"%s","headset":%s,"headsetPct":%s,"now":%s}\n' \
+  "$usage" "$profile" "$vpn" "$vpns" "$ks" "$off" "$novpn" "$gpu" "$bat" "$ac" "$watts" "$batstate" "$top" "$charge" "$hascharge" "$hasgpu" "$hasvpn" "$gpuset" "$gpunow" "$gpufail" "$hname" "$hpct" "$(date +%s%3N)"

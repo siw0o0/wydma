@@ -7,6 +7,8 @@ Item {
     property real value: 0
     property real temp: 0
     property string tempText
+    property real tempWarn: 70
+    property real tempAlert: 85
     property color color
     property Theme theme: Theme {}
     Layout.fillWidth: true
@@ -26,7 +28,7 @@ Item {
     Text {
         anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom }
         text: "🌡 " + gauge.tempText
-        color: gauge.temp >= 85 ? theme.alert : gauge.temp >= 70 ? theme.warn : theme.muted
+        color: gauge.temp >= gauge.tempAlert ? theme.alert : gauge.temp >= gauge.tempWarn ? theme.warn : theme.muted
         font.pixelSize: 12
     }
 }

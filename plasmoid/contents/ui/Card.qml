@@ -9,6 +9,13 @@ Item {
     property color accent: theme.sky
     default property alias content: body.data
     property Theme theme: Theme {}
+    // Kafelek bez danych znika z kolumny razem z odstępem.
+    property bool shown: true
+    // Klikalny kafelek pokazuje kursor dłoni i zgłasza tapped().
+    property bool clickable: false
+    signal tapped()
+    HoverHandler { enabled: card.clickable; cursorShape: Qt.PointingHandCursor }
+    TapHandler { enabled: card.clickable; onTapped: card.tapped() }
     width: parent ? parent.width : 330
     implicitHeight: body.implicitHeight + 46
     height: implicitHeight
@@ -16,11 +23,11 @@ Item {
     Rectangle {
         id: bg
         anchors.fill: parent
-        radius: 18
+        radius: theme.radius
         color: theme.card
         border.color: theme.edge
         border.width: 1
-        layer.enabled: true
+        layer.enabled: theme.shadow
         layer.effect: MultiEffect {
             shadowEnabled: true
             shadowColor: Qt.rgba(0, 0, 0, 0.4)
@@ -32,9 +39,9 @@ Item {
         id: head
         anchors { left: parent.left; right: parent.right; top: parent.top; margins: 14; topMargin: 12 }
         Rectangle { width: 7; height: 7; radius: 4; color: card.accent }
-        Text { text: card.title; color: theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: 1.4; font.capitalization: Font.AllUppercase }
+        Text { text: card.title; color: theme.muted; font.pixelSize: 11; font.weight: Font.DemiBold; font.letterSpacing: theme.upperTitles ? 1.4 : 0.3; font.capitalization: theme.upperTitles ? Font.AllUppercase : Font.MixedCase; elide: Text.ElideRight; Layout.maximumWidth: card.width * 0.6 }
         Item { Layout.fillWidth: true }
-        Text { text: card.note; color: theme.faint; font.pixelSize: 11 }
+        Text { text: card.note; color: theme.faint; font.pixelSize: 11; elide: Text.ElideRight; Layout.maximumWidth: card.width * 0.55 }
     }
     ColumnLayout {
         id: body

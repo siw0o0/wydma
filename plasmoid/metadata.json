@@ -3,16 +3,17 @@
   "KPlugin": {
     "Id": "wydma",
     "Name": "Wydma",
-    "Description": "Panel na pulpit: zegar, limity Claude, CPU/GPU, RAM i dysk, sieć z VPN, zasilanie i słuchawki",
+    "Description": "Panel na pulpit: zegar, plan, limity Claude, CPU/GPU, pamięć, sieć, zasilanie, VPN i własne kafelki",
     "Icon": "utilities-system-monitor",
     "Category": "System Information",
-    "Version": "1.0",
+    "Version": "2.0",
     "License": "GPL-3.0-or-later",
     "Authors": [
       {
         "Name": "siw0o0"
       }
-    ]
+    ],
+    "Description[en]": "Desktop panel: clock, schedule, Claude limits, CPU/GPU, memory, network, power, VPN and your own cards"
   },
   "X-Plasma-API-Minimum-Version": "6.0"
 }
