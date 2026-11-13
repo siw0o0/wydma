@@ -114,10 +114,14 @@ PlasmoidItem {
     Sensors.Sensor { id: osPlasma; sensorId: "os/plasma/plasmaVersion"; enabled: root.has("system") }
     Sensors.Sensor { id: osUptime; sensorId: "os/system/uptime"; updateRateLimit: 60000; enabled: root.has("system") }
 
+    // Bez sekund na zegarze wystarczy takt czujników. Kafelki liczące czas do zdarzeń (plan, limity)
+    // patrzą na root.minute, więc przeliczają się raz na minutę, a nie przy każdym takcie.
+    property var minute: new Date()
     Timer {
-        interval: 1000; repeat: true; running: true; triggeredOnStart: true
+        interval: root.cfg.seconds ? 1000 : root.rate; repeat: true; running: true; triggeredOnStart: true
         onTriggered: {
             root.now = new Date();
+            if (root.now.getMinutes() !== root.minute.getMinutes() || root.now - root.minute >= 60000) root.minute = root.now;
             root.down = root.down.concat([root.num(netDown)]).slice(-40);
             root.up = root.up.concat([root.num(netUp)]).slice(-40);
         }
@@ -247,7 +251,7 @@ PlasmoidItem {
         onTriggered: root.refresh(root.ticks++ % 6 === 0)
     }
 
-    // Plan co minutę: polecenie z ustawień albo program ~/.config/wydma/plan. Podaje jedną linię JSON
+    // Plan co 3 godziny (i przy starcie): polecenie z ustawień albo program ~/.config/wydma/plan. Podaje jedną linię JSON
     // { pobrano, zajecia: [{ przedmiot, forma, start, koniec, sala, budynek, uwaga }] }; bez niego kafelka nie ma.
     property var plan: null
     readonly property string planCmd: cfg.planCommand ? "( " + cfg.planCommand + " ) 2>/dev/null || echo null"
@@ -261,7 +265,7 @@ PlasmoidItem {
         }
     }
     Timer {
-        interval: 60000; repeat: true; running: root.has("plan"); triggeredOnStart: true
+        interval: 3 * 3600000; repeat: true; running: root.has("plan"); triggeredOnStart: true
         onTriggered: planExec.connectSource(root.planCmd)
     }
     onPlanCmdChanged: if (has("plan")) planExec.connectSource(planCmd)
@@ -363,14 +367,11 @@ PlasmoidItem {
             shown: root.plan !== null
             title: root.cfg.planTitle || root.tr("Zajęcia")
             accent: pal.teal
-            readonly property var list: root.plan && root.plan.zajecia ? root.plan.zajecia.filter(z => Date.parse(z.koniec) > root.now) : []
+            readonly property var list: root.plan && root.plan.zajecia ? root.plan.zajecia.filter(z => Date.parse(z.koniec) > root.minute) : []
             readonly property var cur: list.length ? list[0] : null
             readonly property real startMs: cur ? Date.parse(cur.start) : 0
-            readonly property real endMs: cur ? Date.parse(cur.koniec) : 0
-            readonly property bool live: cur !== null && startMs <= root.now
-            note: !cur ? "" : live ? root.tr("trwa, jeszcze %1", root.span(endMs - root.now))
-                : startMs - root.now < 12 * 3600000 ? root.tr("za %1", root.span(startMs - root.now))
-                : root.dayName(cur.start)
+            readonly property bool live: cur !== null && startMs <= root.minute
+            note: !cur ? "" : live ? root.tr("trwa") : root.dayName(cur.start)
 
             // Kliknięcie w kafelek otwiera aplikację z planem.
             clickable: true
@@ -411,13 +412,6 @@ PlasmoidItem {
                     }
                 }
             }
-            Bar {
-                Layout.fillWidth: true
-                visible: classCard.live
-                implicitHeight: 6
-                value: classCard.live ? 100 * (root.now - classCard.startMs) / (classCard.endMs - classCard.startMs) : 0
-                color: pal.teal; track: pal.track
-            }
             // Kolejne pozycje
             Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: pal.track; visible: classCard.list.length > 1 && root.cfg.planCount > 0 }
             Repeater {
@@ -444,7 +438,7 @@ PlasmoidItem {
                 color: pal.muted; font.pixelSize: 12
             }
             Txt {
-                visible: !!root.plan && !!root.plan.pobrano && root.now - Date.parse(root.plan.pobrano) > 3 * 86400000
+                visible: !!root.plan && !!root.plan.pobrano && root.minute - Date.parse(root.plan.pobrano) > 3 * 86400000
                 Layout.fillWidth: true
                 text: visible ? root.tr("plan z %1, do odświeżenia", new Date(Date.parse(root.plan.pobrano)).toLocaleDateString(root.loc, "d.MM")) : ""
                 color: pal.warn; font.pixelSize: 11
@@ -461,7 +455,7 @@ PlasmoidItem {
             title: root.tr("Limity Claude")
             accent: pal.clay
             readonly property var usage: root.status.usage || null
-            note: usage ? root.tr("odczyt %1 temu", root.span(root.now - usage.at)) : ""
+            note: usage ? root.tr("odczyt %1 temu", root.span(root.minute - usage.at)) : ""
             Repeater {
                 model: claude.usage ? claude.usage.limits.length : 0
                 delegate: MeterRow {
@@ -469,7 +463,7 @@ PlasmoidItem {
                     readonly property var lim: claude.usage ? claude.usage.limits[index] : null
                     theme: pal
                     name: lim ? root.limitName(lim.kind) : ""
-                    detail: lim && lim.resetsAt ? root.tr("reset za %1", root.span(Date.parse(lim.resetsAt) - root.now)) : ""
+                    detail: lim && lim.resetsAt ? root.tr("reset za %1", root.span(Date.parse(lim.resetsAt) - root.minute)) : ""
                     value: lim ? lim.percent : 0
                     color: pal.clay
                     nameSize: 14
