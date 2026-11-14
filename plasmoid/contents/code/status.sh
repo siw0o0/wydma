@@ -1,6 +1,6 @@
 #!/bin/sh
 # Jedna linia JSON dla widżetu: limity Claude, zasilanie, VPN, słuchawki.
-# Wołany co 10 s, więc bez ciężkich narzędzi: profil zasilania z D-Bus, jedno wywołanie nmcli
+# Wołany co 10 s albo rzadziej (w takcie widżetu), więc bez ciężkich narzędzi: profil zasilania z D-Bus, jedno wywołanie nmcli
 # i jedno upower. Argumenty: "full" dodaje listę profili VPN (zmienia się rzadko), "procs"
 # programy zajmujące najwięcej pamięci. WYDMA_USAGE wskazuje inny plik z limitami Claude.
 # Liczby z kropką, niezależnie od języka systemu.
@@ -118,5 +118,5 @@ headset=$(upower --dump 2>/dev/null | awk -F': *' '
 hname=${headset% *}; hpct=${headset##* }
 [ -n "$headset" ] || { hname='""'; hpct=null; }
 
-printf '{"usage":%s,"profile":"%s","vpn":"%s","vpns":%s,"ks":%s,"manualOff":%s,"noVpnNet":%s,"gpu":"%s","bat":%s,"ac":%s,"watts":%s,"batState":"%s","top":%s,"charge":"%s","hasCharge":%s,"hasGpu":%s,"hasVpn":%s,"gpuSet":"%s","gpuNow":"%s","gpuFail":"%s","headset":%s,"headsetPct":%s,"now":%s}\n' \
-  "$usage" "$profile" "$vpn" "$vpns" "$ks" "$off" "$novpn" "$gpu" "$bat" "$ac" "$watts" "$batstate" "$top" "$charge" "$hascharge" "$hasgpu" "$hasvpn" "$gpuset" "$gpunow" "$gpufail" "$hname" "$hpct" "$(date +%s%3N)"
+printf '{"usage":%s,"profile":"%s","vpn":"%s","vpns":%s,"ks":%s,"manualOff":%s,"noVpnNet":%s,"gpu":"%s","bat":%s,"ac":%s,"watts":%s,"batState":"%s","top":%s,"charge":"%s","hasCharge":%s,"hasGpu":%s,"hasVpn":%s,"gpuSet":"%s","gpuNow":"%s","gpuFail":"%s","headset":%s,"headsetPct":%s}\n' \
+  "$usage" "$profile" "$vpn" "$vpns" "$ks" "$off" "$novpn" "$gpu" "$bat" "$ac" "$watts" "$batstate" "$top" "$charge" "$hascharge" "$hasgpu" "$hasvpn" "$gpuset" "$gpunow" "$gpufail" "$hname" "$hpct"

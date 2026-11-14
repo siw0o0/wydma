@@ -227,11 +227,13 @@ PlasmoidItem {
         }
     }
 
-    // Limity Claude, zasilanie, VPN, słuchawki i procesy z jednego skryptu: co 10 s lekki odczyt,
-    // raz na minutę pełny (z listą profili VPN).
+    // Limity Claude, zasilanie, VPN, słuchawki i procesy z jednego skryptu: lekki odczyt w takcie
+    // czujników, ale nie częściej niż co 10 s, i mniej więcej raz na minutę pełny (z listą profili VPN).
     readonly property string statusCmd: (cfg.usageFile ? "WYDMA_USAGE=" + q(cfg.usageFile) + " " : "")
         + "sh " + q(Qt.resolvedUrl("../code/status.sh").toString().replace("file://", ""))
     function refresh(full) { exec.connectSource(statusCmd + (full ? " full" : "") + (has("procs") ? " procs" : "")); }
+    // Ostatni odczyt: ten sam stan nie podmienia root.status, więc kafelki się nie przeliczają.
+    property string lastStatus: ""
     P5Support.DataSource {
         id: exec
         engine: "executable"
@@ -240,15 +242,17 @@ PlasmoidItem {
                 var next = JSON.parse(data["stdout"]);
                 // Lista VPN-ów przychodzi tylko w pełnym odczycie; między nimi zostaje poprzednia.
                 if (next.vpns === null) next.vpns = root.status.vpns || [];
-                root.status = next;
+                var key = JSON.stringify(next);
+                if (key !== root.lastStatus) { root.lastStatus = key; root.status = next; }
             } catch (e) {}
             disconnectSource(source);
         }
     }
     property int ticks: 0
+    readonly property int statusRate: Math.max(10000, rate)
     Timer {
-        interval: 10000; repeat: true; running: true; triggeredOnStart: true
-        onTriggered: root.refresh(root.ticks++ % 6 === 0)
+        interval: root.statusRate; repeat: true; running: true; triggeredOnStart: true
+        onTriggered: root.refresh(root.ticks++ % Math.max(1, Math.round(60000 / root.statusRate)) === 0)
     }
 
     // Plan co 3 godziny (i przy starcie): polecenie z ustawień albo program ~/.config/wydma/plan. Podaje jedną linię JSON

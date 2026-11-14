@@ -5,8 +5,11 @@ Canvas {
     property var series: []
     property var colors: []
     implicitHeight: 46
-    onSeriesChanged: requestPaint()
+    // Seria dostaje nową tablicę przy każdym takcie; bez ruchu w sieci wykres wygląda tak samo, więc go nie rysuje.
+    property string drawn: ""
+    onSeriesChanged: if (JSON.stringify(series) !== drawn) requestPaint()
     onPaint: {
+        drawn = JSON.stringify(series);
         var c = getContext("2d"); c.reset();
         var max = 1;
         for (var s = 0; s < series.length; ++s) for (var i = 0; i < series[s].length; ++i) max = Math.max(max, series[s][i]);
