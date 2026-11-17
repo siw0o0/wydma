@@ -376,6 +376,16 @@ PlasmoidItem {
             readonly property real startMs: cur ? Date.parse(cur.start) : 0
             readonly property bool live: cur !== null && startMs <= root.minute
             note: !cur ? "" : live ? root.tr("trwa") : root.dayName(cur.start)
+            // Kolumna z terminem kolejnych zajęć ma szerokość najdłuższego wpisu:
+            // dzień tygodnia z datą nie mieści się w stałej szerokości.
+            readonly property var nextDates: list.slice(1, 1 + Math.max(0, root.cfg.planCount)).map(c => root.dayName(c.start) + " " + root.hm(c.start))
+            readonly property real dateW: Math.ceil(nextDates.reduce((w, t) => Math.max(w, dateMetrics.advanceWidth(t)), 0)) + 2
+            FontMetrics {
+                id: dateMetrics
+                font.pixelSize: 12
+                font.family: Plasmoid.configuration.fontFamily || Qt.application.font.family
+                font.features: { "tnum": 1 }
+            }
 
             // Kliknięcie w kafelek otwiera aplikację z planem.
             clickable: true
@@ -426,9 +436,9 @@ PlasmoidItem {
                     Layout.fillWidth: true
                     spacing: 8
                     Txt {
-                        text: cls ? root.dayName(cls.start) + " " + root.hm(cls.start) : ""
+                        text: classCard.nextDates[index] || ""
                         color: pal.muted; font.pixelSize: 12; font.features: { "tnum": 1 }
-                        Layout.preferredWidth: 88
+                        Layout.preferredWidth: classCard.dateW
                     }
                     Txt { text: cls ? cls.przedmiot + (cls.forma ? " (" + cls.forma + ")" : "") : ""; color: pal.ink; font.pixelSize: 12; elide: Text.ElideRight; Layout.fillWidth: true }
                     Txt { text: cls ? cls.sala || "" : ""; color: pal.faint; font.pixelSize: 12 }
