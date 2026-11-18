@@ -22,7 +22,16 @@ RowLayout {
             implicitHeight: 30
             radius: 10
             color: active ? row.accent : row.theme.track
-            opacity: row.busy ? 0.55 : 1
+            // W trakcie zapisu wybrany przycisk pulsuje, pozostałe przygasają.
+            opacity: !row.busy ? 1 : active ? pulse : 0.4
+            property real pulse: 1
+            SequentialAnimation on pulse {
+                running: row.busy && active
+                loops: Animation.Infinite
+                onStopped: pulse = 1
+                NumberAnimation { to: 0.5; duration: 600; easing.type: Easing.InOutSine }
+                NumberAnimation { to: 1; duration: 600; easing.type: Easing.InOutSine }
+            }
             Behavior on color { ColorAnimation { duration: 200 } }
             Txt {
                 anchors.centerIn: parent

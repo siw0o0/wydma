@@ -1,8 +1,11 @@
 #!/bin/sh
 # Tryb grafiki w firmware: hybrid, igpu albo dgpu. Działa po restarcie.
 # Sterownik pokazuje stan z bieżącego startu, więc żądany tryb zapisujemy obok, razem z boot_id.
+# W trybie igpu blokujemy moduły NVIDII: firmware odłącza dGPU ~30 s po starcie,
+# ale załadowany sterownik trzyma kartę i odłączenie utyka (karta zostaje w D0).
 set -e
 base=/sys/devices/platform/legion
+block=/etc/modprobe.d/gpu-mode-igpu.conf
 case "$1" in
   hybrid) g=1; i=0 ;;
   igpu) g=1; i=1 ;;
@@ -12,3 +15,29 @@ esac
 echo "$g" > "$base/gsync"
 echo "$i" > "$base/igpumode"
 echo "$1 $(cat /proc/sys/kernel/random/boot_id)" > /var/lib/gpu-mode-target
+
+changed=0
+if [ "$1" = igpu ]; then
+  if [ ! -f "$block" ]; then
+    cat > "$block" <<'EOF'
+# Zapisane przez /usr/local/sbin/gpu-mode igpu; usuwane przy hybrid/dgpu.
+blacklist nvidia
+blacklist nvidia_drm
+blacklist nvidia_modeset
+blacklist nvidia_uvm
+blacklist nouveau
+install nvidia /bin/false
+install nvidia_drm /bin/false
+install nvidia_modeset /bin/false
+install nvidia_uvm /bin/false
+install nouveau /bin/false
+EOF
+    changed=1
+  fi
+elif [ -f "$block" ]; then
+  rm -f "$block"
+  changed=1
+fi
+if [ "$changed" = 1 ]; then
+  update-initramfs -u -k "$(uname -r)" >/dev/null 2>&1 || update-initramfs -u -k "$(uname -r)"
+fi

@@ -62,7 +62,7 @@ Switches that need a helper show up only when the helper is installed. The helpe
   yourname ALL=(root) NOPASSWD: /usr/local/sbin/battery-mode
   ```
 
-- **Graphics mode** (`helpers/gpu-mode`): Hybrid, iGPU or dGPU on Legion laptops with the `legion_laptop` driver, applied at the next boot. Install it as `/usr/local/sbin/gpu-mode` with a sudoers line like the one above.
+- **Graphics mode** (`helpers/gpu-mode`): Hybrid, iGPU or dGPU on Legion laptops with the `legion_laptop` driver, applied at the next boot. In iGPU mode it also blacklists the NVIDIA modules and rebuilds the initramfs (Debian/Ubuntu `update-initramfs`), so switching to or from iGPU takes a while. Install it as `/usr/local/sbin/gpu-mode` with a sudoers line like the one above.
 - **Proton VPN automation** (`helpers/protonvpn-auto`): keeps Proton VPN (its CLI) on everywhere except the Wi-Fi networks listed in the settings, and switches to other VPN profiles. Install it as `~/.local/bin/protonvpn-auto`; run it from a NetworkManager dispatcher script and at login to have it follow network changes. Without it the VPN card still works: it connects and disconnects NetworkManager's VPN profiles directly.
 - **Schedule**: a command that prints one line of JSON, `{ "pobrano": ISO time, "zajecia": [{ "przedmiot", "forma", "start", "koniec", "sala", "budynek", "uwaga" }] }` (title, kind, start, end, room, building, remark; `start` and `koniec` are ISO times, the rest is optional). Set it in the settings, or put an executable at `~/.config/wydma/plan`.
 

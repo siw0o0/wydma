@@ -213,8 +213,11 @@ PlasmoidItem {
     Timer { id: chargeDoneTimer; interval: 6000; onTriggered: root.chargeDone = "" }
 
     // Tryb grafiki: zapis w firmware przez /usr/local/sbin/gpu-mode, działa dopiero po restarcie.
+    // Przy przejściu do iGPU albo z niego skrypt przebudowuje initramfs (ok. 20 s), więc wybrany tryb
+    // podświetlamy od razu i piszemy, że trwa zapis.
     property bool gpuBusy: false
     property bool gpuFailed: false
+    property string gpuWanted: ""
     readonly property var gpuModes: [
         { arg: "hybrid", value: "hybrid", label: "Hybrid", hint: tr("ekran na Intelu, NVIDIA włącza się w razie potrzeby") },
         { arg: "igpu", value: "igpu", label: "iGPU", hint: tr("tylko Intel, monitor zewnętrzny może nie działać") },
@@ -224,14 +227,24 @@ PlasmoidItem {
     function setGpu(arg) {
         gpuBusy = true;
         gpuFailed = false;
+        gpuWanted = arg;
+        gpuTimeout.restart();
         gpuExec.connectSource("sudo -n /usr/local/sbin/gpu-mode " + arg);
+    }
+    // Bezpiecznik: gdyby skrypt nie odpowiedział, po 3 min odblokuj przyciski i pokaż stan z systemu.
+    Timer {
+        id: gpuTimeout
+        interval: 180000
+        onTriggered: { root.gpuBusy = false; root.gpuWanted = ""; root.refresh(false); }
     }
     P5Support.DataSource {
         id: gpuExec
         engine: "executable"
         onNewData: (source, data) => {
             disconnectSource(source);
+            gpuTimeout.stop();
             root.gpuBusy = false;
+            root.gpuWanted = "";
             root.gpuFailed = data["exit code"] !== 0;
             root.refresh(false);
         }
@@ -646,7 +659,7 @@ PlasmoidItem {
             ModeRow {
                 theme: pal
                 modes: root.gpuModes
-                current: gpuCard.set
+                current: root.gpuBusy ? root.gpuWanted : gpuCard.set
                 busy: root.gpuBusy
                 accent: pal.sage
                 onPicked: (arg, label) => root.setGpu(arg)
@@ -655,11 +668,12 @@ PlasmoidItem {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 readonly property string missed: root.status.gpuFail || ""
-                text: root.gpuFailed ? "⚠ " + root.tr("Nie udało się zapisać trybu grafiki.")
+                text: root.gpuBusy ? "… " + root.tr("Zapisuję: %1. To może potrwać do pół minuty.", root.gpuLabel(root.gpuWanted))
+                    : root.gpuFailed ? "⚠ " + root.tr("Nie udało się zapisać trybu grafiki.")
                     : gpuCard.pending ? "✓ " + root.tr("Zapisano: %1. Zadziała po restarcie.", root.gpuLabel(gpuCard.set))
                     : missed ? "⚠ " + root.tr("Po restarcie nadal %1, firmware nie włączył %2.", root.gpuLabel(gpuCard.active), root.gpuLabel(missed))
                     : gpuCard.mode ? "✓ " + root.tr("Aktywny: %1", gpuCard.mode.label) + ", " + gpuCard.mode.hint : ""
-                color: root.gpuFailed || missed ? pal.alert : gpuCard.pending ? pal.warn : pal.faint
+                color: root.gpuBusy ? pal.ink : root.gpuFailed || missed ? pal.alert : gpuCard.pending ? pal.warn : pal.faint
                 font.pixelSize: 11
             }
         }
@@ -716,7 +730,9 @@ PlasmoidItem {
                         color: pal.ink; font.pixelSize: 12; font.weight: Font.Medium
                     }
                     MouseArea {
+                        id: rollMouse
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         enabled: !root.vpnBusy
                         onClicked: root.rollVpn()
@@ -730,9 +746,7 @@ PlasmoidItem {
                     required property var modelData
                     readonly property bool active: root.vpnNow === modelData
                     readonly property bool picking: root.vpnPick === modelData
-                        id: rollMouse
                     Layout.fillWidth: true
-                        hoverEnabled: true
                     implicitHeight: 30
                     radius: 10
                     color: active ? pal.tint(pal.sage, 0.28) : pal.track
@@ -750,7 +764,9 @@ PlasmoidItem {
                         }
                     }
                     MouseArea {
+                        id: pickMouse
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         enabled: !root.vpnBusy
                         onClicked: active ? root.toggleVpn(false) : root.pickVpn(modelData)
@@ -764,9 +780,7 @@ PlasmoidItem {
                 text: "⚠ " + root.tr("Nie udało się połączyć z %1.", root.vpnFailed)
                 color: pal.alert; font.pixelSize: 11
             }
-                        id: pickMouse
             // Ostrzeżenie o kill switchu
-                        hoverEnabled: true
             Rectangle {
                 Layout.fillWidth: true
                 visible: root.status.ks === 1 && (root.cfg.vpnWarning || vpn.blocking)
