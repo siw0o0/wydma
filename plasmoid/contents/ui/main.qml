@@ -128,8 +128,9 @@ PlasmoidItem {
     }
 
     // VPN. Ze skryptem ~/.local/bin/protonvpn-auto steruje on Protonem i pilnuje sieci bez VPN-a;
-    // bez niego przełącznik i lista łączą profile NetworkManagera wprost.
+    // bez niego lista łączy profile NetworkManagera wprost. Kliknięcie aktywnej pozycji rozłącza.
     property bool vpnBusy: false
+    property bool vpnRolling: false
     readonly property bool vpnTool: status.hasVpn === 1
     readonly property string vpnCmd: "\"$HOME/.local/bin/protonvpn-auto\" "
     readonly property string protonName: "Proton VPN"
@@ -137,6 +138,14 @@ PlasmoidItem {
     readonly property var vpnList: (vpnTool ? [protonName] : []).concat(status.vpns || [])
     property string vpnPick
     property string vpnFailed
+    // Nowe IP: inny losowy serwer Protona w tym samym kraju.
+    function rollVpn() {
+        vpnBusy = true;
+        vpnRolling = true;
+        vpnPick = "";
+        vpnFailed = "";
+        vpnExec.connectSource(vpnCmd + "roll");
+    }
     function toggleVpn(on) {
         vpnBusy = true;
         vpnPick = "";
@@ -159,6 +168,7 @@ PlasmoidItem {
         onNewData: (source, data) => {
             disconnectSource(source);
             root.vpnBusy = false;
+            root.vpnRolling = false;
             if (root.vpnPick && data["exit code"] !== 0) root.vpnFailed = root.vpnPick;
             root.vpnPick = "";
             root.refresh(true);
@@ -667,7 +677,8 @@ PlasmoidItem {
             shown: root.vpnTool || on || root.vpnList.length > 0
             accent: blocking ? pal.alert : on ? pal.sage : pal.faint
             readonly property bool proton: root.vpnNow === root.protonName
-            note: root.vpnBusy ? (on && !root.vpnPick ? root.tr("rozłączanie…") : root.tr("łączenie…"))
+            note: root.vpnRolling ? root.tr("zmiana IP…")
+                : root.vpnBusy ? (on && !root.vpnPick ? root.tr("rozłączanie…") : root.tr("łączenie…"))
                 : on ? root.status.vpn.replace("ProtonVPN ", "")
                 : root.status.noVpnNet === 1 ? root.tr("ta sieć: bez VPN-a")
                 : root.status.manualOff === 1 ? root.tr("wyłączony ręcznie") : root.tr("wyłączony")
@@ -691,35 +702,37 @@ PlasmoidItem {
                         color: pal.faint; font.pixelSize: 11
                     }
                 }
-                // Przełącznik
+                // Nowe IP
                 Rectangle {
-                    visible: root.vpnTool || vpn.on || root.vpnList.length > 0
-                    width: 52; height: 30; radius: 15
-                    color: vpn.on ? pal.sage : pal.track
+                    visible: root.vpnTool && vpn.proton
+                    implicitWidth: rollText.implicitWidth + 22; implicitHeight: 30; radius: 15
+                    color: rollMouse.containsMouse && !root.vpnBusy ? pal.tint(pal.sage, 0.28) : pal.track
                     opacity: root.vpnBusy ? 0.55 : 1
                     Behavior on color { ColorAnimation { duration: 200 } }
-                    Rectangle {
-                        width: 24; height: 24; radius: 12
-                        y: 3; x: vpn.on ? parent.width - width - 3 : 3
-                        color: "white"
-                        Behavior on x { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+                    Txt {
+                        id: rollText
+                        anchors.centerIn: parent
+                        text: "↻ " + root.tr("Nowe IP")
+                        color: pal.ink; font.pixelSize: 12; font.weight: Font.Medium
                     }
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
                         enabled: !root.vpnBusy
-                        onClicked: root.toggleVpn(!vpn.on)
+                        onClicked: root.rollVpn()
                     }
                 }
             }
             // Lista wyboru VPN-a
             Repeater {
-                model: root.vpnList.length > 1 || !root.vpnTool ? root.vpnList : []
+                model: root.vpnList
                 delegate: Rectangle {
                     required property var modelData
                     readonly property bool active: root.vpnNow === modelData
                     readonly property bool picking: root.vpnPick === modelData
+                        id: rollMouse
                     Layout.fillWidth: true
+                        hoverEnabled: true
                     implicitHeight: 30
                     radius: 10
                     color: active ? pal.tint(pal.sage, 0.28) : pal.track
@@ -729,13 +742,18 @@ PlasmoidItem {
                         anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
                         spacing: 8
                         Txt { text: modelData; color: pal.ink; font.pixelSize: 12; font.weight: active ? Font.DemiBold : Font.Normal; elide: Text.ElideRight; Layout.fillWidth: true }
-                        Txt { text: picking ? root.tr("łączenie…") : active ? "✓ " + root.tr("połączono") : ""; color: active ? pal.sage : pal.faint; font.pixelSize: 11 }
+                        Txt {
+                            text: picking ? root.tr("łączenie…")
+                                : active && pickMouse.containsMouse && !root.vpnBusy ? root.tr("rozłącz")
+                                : active ? "✓ " + root.tr("połączono") : ""
+                            color: active && !pickMouse.containsMouse ? pal.sage : pal.faint; font.pixelSize: 11
+                        }
                     }
                     MouseArea {
                         anchors.fill: parent
                         cursorShape: Qt.PointingHandCursor
-                        enabled: !root.vpnBusy && !active
-                        onClicked: root.pickVpn(modelData)
+                        enabled: !root.vpnBusy
+                        onClicked: active ? root.toggleVpn(false) : root.pickVpn(modelData)
                     }
                 }
             }
@@ -746,7 +764,9 @@ PlasmoidItem {
                 text: "⚠ " + root.tr("Nie udało się połączyć z %1.", root.vpnFailed)
                 color: pal.alert; font.pixelSize: 11
             }
+                        id: pickMouse
             // Ostrzeżenie o kill switchu
+                        hoverEnabled: true
             Rectangle {
                 Layout.fillWidth: true
                 visible: root.status.ks === 1 && (root.cfg.vpnWarning || vpn.blocking)

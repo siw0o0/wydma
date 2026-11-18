@@ -7,6 +7,7 @@
 #   protonvpn-auto off      ręczne wyłączenie do następnej zmiany sieci
 #   protonvpn-auto on       ręczne włączenie (kasuje wyłączenie)
 #   protonvpn-auto select N przełączenie na VPN o nazwie N albo "Proton VPN"
+#   protonvpn-auto roll     nowe IP: losowy inny serwer Protona w tym samym kraju
 
 # Sieci bez VPN-a: jedna nazwa Wi-Fi w wierszu, wiersze z # to komentarze. Bez pliku VPN działa wszędzie.
 NOVPN_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/wydma/novpn"
@@ -29,6 +30,35 @@ is_connected() {
 
 connect() { is_connected || { log "łączę VPN ($1)"; timeout 60 protonvpn connect >/dev/null 2>&1 || log "nie udało się połączyć"; }; }
 disconnect() { is_connected && { log "rozłączam VPN ($1)"; timeout 30 protonvpn disconnect >/dev/null 2>&1; }; }
+
+# Bieżący serwer Protona, np. PL#66.
+current() {
+  nmcli -t -f TYPE,NAME con show --active 2>/dev/null | sed -n -E 's/^wireguard:ProtonVPN (.*)$/\1/p' | head -1
+}
+
+# Losowy serwer z listy klienta Protona: ten sam kraj wyjścia, inny adres wyjściowy, dostępny
+# w planie konta, bez Secure Core i Tora, z rozsądnym obciążeniem.
+pick_server() {
+  python3 -I - "$1" "${XDG_CACHE_HOME:-$HOME/.cache}/Proton/VPN/serverlist.json" <<'PY'
+import json, random, sys
+cur, path = sys.argv[1], sys.argv[2]
+d = json.load(open(path))
+L = [s for s in d["LogicalServers"] if s.get("Status")]
+me = next((s for s in L if s["Name"] == cur), None)
+if not me:
+    sys.exit(1)
+ips = {x["ExitIP"] for x in me["Servers"]}
+tier = d.get("MaxTier", me["Tier"])
+ok = [s for s in L if s["ExitCountry"] == me["ExitCountry"] and s["Tier"] <= tier
+      and not s["Features"] & 3 and s["Name"] != cur
+      and not ips & {x["ExitIP"] for x in s["Servers"] if x.get("Status") == 1}
+      and any(x.get("Status") == 1 for x in s["Servers"])]
+light = [s for s in ok if s.get("Load", 100) < 70] or ok
+if not light:
+    sys.exit(1)
+print(random.choice(light)["Name"])
+PY
+}
 
 # Aktywne VPN-y z NetworkManagera inne niż Proton.
 others() {
@@ -66,6 +96,24 @@ case "$1" in
     # Nieudane połączenie nie może zostawić bez VPN-a: wraca zwykła decyzja dla sieci.
     log "nie udało się połączyć z $2"
     "$0"
+    exit 1
+    ;;
+  roll)
+    rm -f "$OFF_FLAG"
+    drop_others ""
+    cur=$(current)
+    next=$([ -n "$cur" ] && pick_server "$cur")
+    if [ -z "$next" ]; then
+      # Bez znanego serwera albo bez listy: losowy serwer na świecie.
+      log "nowe IP: losowy serwer"
+      timeout 60 protonvpn connect --random >/dev/null 2>&1
+    else
+      log "nowe IP: $cur → $next"
+      timeout 60 protonvpn connect "$next" >/dev/null 2>&1
+    fi
+    is_connected && exit 0
+    log "nie udało się zmienić serwera"
+    connect "powrót"
     exit 1
     ;;
   on)
