@@ -26,7 +26,7 @@ KCM.SimpleKCM {
     readonly property var themes: [
         { id: "dune", name: tr("Wydma") }, { id: "midnight", name: tr("Północ") }, { id: "forest", name: tr("Las") },
         { id: "graphite", name: tr("Grafit") }, { id: "light", name: tr("Piasek") }, { id: "paper", name: tr("Papier") },
-        { id: "system", name: tr("Systemowy") }
+        { id: "strata", name: tr("Warstwy") }, { id: "system", name: tr("Systemowy") }
     ]
 
     ColumnLayout {
@@ -74,6 +74,14 @@ KCM.SimpleKCM {
                         width: 84; height: 62
                         radius: 10
                         color: look.base
+                        // Warstwy: kafelek wyboru pokazuje cały przekrój od jasnej do ciemnej warstwy.
+                        gradient: look.strata ? strataFill : null
+                        Gradient {
+                            id: strataFill
+                            GradientStop { position: 0; color: look.strataStops[0] }
+                            GradientStop { position: 0.5; color: look.strataStops[4] }
+                            GradientStop { position: 1; color: look.strataStops[look.strataStops.length - 1] }
+                        }
                         border.width: current ? 2 : 1
                         border.color: current ? Kirigami.Theme.highlightColor : Qt.rgba(0.5, 0.5, 0.5, 0.4)
                         Column {

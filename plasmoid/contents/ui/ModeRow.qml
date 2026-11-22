@@ -10,6 +10,8 @@ RowLayout {
     property color accent
     property Theme theme: Theme {}
     signal picked(string arg, string label)
+    // W warstwach przyciski są obwódkami, a wybrany wypełnia się kolorem tekstu.
+    readonly property bool outline: theme.banded
     Layout.fillWidth: true
     spacing: 6
     Repeater {
@@ -19,9 +21,11 @@ RowLayout {
             readonly property bool active: row.current === modelData.value
             Layout.fillWidth: true
             Layout.preferredWidth: 1
-            implicitHeight: 30
-            radius: 10
-            color: active ? row.accent : row.theme.track
+            implicitHeight: row.outline ? 31 : 30
+            radius: row.outline ? height / 2 : 10
+            color: active ? row.accent : row.outline ? "transparent" : row.theme.track
+            border.width: row.outline && !active ? 1 : 0
+            border.color: row.theme.tint(row.theme.ink, 0.38)
             // W trakcie zapisu wybrany przycisk pulsuje, pozostałe przygasają.
             opacity: !row.busy ? 1 : active ? pulse : 0.4
             property real pulse: 1
@@ -36,8 +40,8 @@ RowLayout {
             Txt {
                 anchors.centerIn: parent
                 text: modelData.label
-                color: active ? row.theme.onAccent : row.theme.ink
-                font.pixelSize: 12; font.weight: Font.Medium
+                color: active ? row.theme.onAccent : row.outline ? row.theme.muted : row.theme.ink
+                font.pixelSize: row.outline ? 13 : 12; font.weight: active && row.outline ? Font.DemiBold : Font.Medium
             }
             MouseArea {
                 anchors.fill: parent

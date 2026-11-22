@@ -4,6 +4,7 @@ Canvas {
     id: spark
     property var series: []
     property var colors: []
+    property real fillAlpha: 0.12
     implicitHeight: 46
     // Seria dostaje nową tablicę przy każdym takcie; bez ruchu w sieci wykres wygląda tak samo, więc go nie rysuje.
     property string drawn: ""
@@ -23,7 +24,7 @@ Canvas {
             }
             c.strokeStyle = colors[s]; c.lineWidth = 2; c.lineJoin = "round"; c.stroke();
             c.lineTo(width, height); c.lineTo(x0, height); c.closePath();
-            c.globalAlpha = 0.12; c.fillStyle = colors[s]; c.fill(); c.globalAlpha = 1;
+            c.globalAlpha = spark.fillAlpha; c.fillStyle = colors[s]; c.fill(); c.globalAlpha = 1;
         }
     }
 }

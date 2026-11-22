@@ -344,43 +344,101 @@ PlasmoidItem {
     }
 
     component Line: RowLayout {
+        id: line
         property string name
         property string value
+        property Theme theme: pal
         Layout.fillWidth: true
         spacing: 10
-        Txt { text: parent.name; color: pal.muted; font.pixelSize: 12 }
-        Txt { text: parent.value; color: pal.ink; font.pixelSize: 12; font.weight: Font.Medium; elide: Text.ElideRight; horizontalAlignment: Text.AlignRight; Layout.fillWidth: true }
+        Txt { text: line.name; color: line.theme.muted; font.pixelSize: 12 }
+        Txt { text: line.value; color: line.theme.ink; font.pixelSize: 12; font.weight: Font.Medium; elide: Text.ElideRight; horizontalAlignment: Text.AlignRight; Layout.fillWidth: true }
     }
 
-    // Zegar
+    // Zegar. Poza warstwami sam tekst na tapecie; w warstwach pierwsza, najjaśniejsza warstwa stosu,
+    // z godziną i datą w jednym rzędzie.
     Component {
         id: clockCard
-        Item {
-            property bool shown: true
+        Card {
+            id: clock
+            theme: pal
+            bare: true
             readonly property bool leftSide: root.cfg.align === "left"
-            implicitHeight: clockCol.implicitHeight + 8
-            height: implicitHeight
-            ColumnLayout {
-                id: clockCol
-                x: parent.leftSide ? 6 : parent.width - width - 6
-                spacing: -4
-                Txt {
-                    Layout.alignment: parent.parent.leftSide ? Qt.AlignLeft : Qt.AlignRight
-                    text: Qt.formatTime(root.now, root.cfg.clock12 ? (root.cfg.seconds ? "h:mm:ss AP" : "h:mm AP") : (root.cfg.seconds ? "HH:mm:ss" : "HH:mm"))
-                    color: root.cfg.darkClock ? "#2a2018" : "white"
-                    font.pixelSize: root.cfg.clockSize; font.weight: Font.Light; font.features: { "tnum": 1 }
-                    style: Text.Raised; styleColor: root.cfg.darkClock ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(0.25, 0.15, 0.05, 0.25)
+            readonly property string time: Qt.formatTime(root.now, root.cfg.clock12 ? (root.cfg.seconds ? "h:mm:ss AP" : "h:mm AP") : (root.cfg.seconds ? "HH:mm:ss" : "HH:mm"))
+            readonly property color tone: root.cfg.darkClock ? "#2a2018" : "white"
+            // Poza warstwami jak dawniej: kolumna dosunięta do wybranej krawędzi.
+            Item {
+                visible: !clock.layered
+                Layout.fillWidth: true
+                implicitHeight: classic.implicitHeight
+                ColumnLayout {
+                    id: classic
+                    x: clock.leftSide ? 6 : parent.width - width - 6
+                    spacing: -4
+                    Txt {
+                        Layout.alignment: clock.leftSide ? Qt.AlignLeft : Qt.AlignRight
+                        text: clock.time
+                        color: clock.tone
+                        font.pixelSize: root.cfg.clockSize; font.weight: Font.Light; font.features: { "tnum": 1 }
+                        style: Text.Raised; styleColor: root.cfg.darkClock ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(0.25, 0.15, 0.05, 0.25)
+                    }
+                    Txt {
+                        Layout.alignment: clock.leftSide ? Qt.AlignLeft : Qt.AlignRight
+                        visible: root.cfg.showDate
+                        text: root.cfg.dateFormat === "iso" ? Qt.formatDate(root.now, "yyyy-MM-dd")
+                            : root.cfg.dateFormat === "short" ? root.now.toLocaleDateString(root.loc, "ddd, d MMM")
+                            : root.now.toLocaleDateString(root.loc, "dddd, d MMMM")
+                        color: clock.tone
+                        font.pixelSize: Math.max(11, root.cfg.clockSize / 4); font.weight: Font.Medium
+                        style: Text.Raised; styleColor: root.cfg.darkClock ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(0.25, 0.15, 0.05, 0.3)
+                    }
                 }
+            }
+            // Warstwy: godzina przy lewej krawędzi, dzień tygodnia nad datą przy prawej, pod spodem wydma doby.
+            readonly property int big: Math.round(root.cfg.clockSize * 1.25)
+            readonly property int small: Math.max(12, Math.round(root.cfg.clockSize * 0.25))
+            RowLayout {
+                visible: clock.layered
+                Layout.fillWidth: true
+                spacing: 10
                 Txt {
-                    Layout.alignment: parent.parent.leftSide ? Qt.AlignLeft : Qt.AlignRight
+                    id: strataTime
+                    text: clock.time
+                    face: look.display
+                    color: look.ink
+                    font.pixelSize: clock.big; font.weight: Font.Light; font.features: { "tnum": 1 }
+                    font.letterSpacing: -clock.big * 0.03
+                    Layout.leftMargin: -clock.big * 0.03
+                }
+                Item { Layout.fillWidth: true }
+                ColumnLayout {
                     visible: root.cfg.showDate
-                    text: root.cfg.dateFormat === "iso" ? Qt.formatDate(root.now, "yyyy-MM-dd")
-                        : root.cfg.dateFormat === "short" ? root.now.toLocaleDateString(root.loc, "ddd, d MMM")
-                        : root.now.toLocaleDateString(root.loc, "dddd, d MMMM")
-                    color: root.cfg.darkClock ? "#2a2018" : "white"
-                    font.pixelSize: Math.max(11, root.cfg.clockSize / 4); font.weight: Font.Medium
-                    style: Text.Raised; styleColor: root.cfg.darkClock ? Qt.rgba(1, 1, 1, 0.3) : Qt.rgba(0.25, 0.15, 0.05, 0.3)
+                    spacing: 0
+                    Layout.alignment: Qt.AlignBottom
+                    // Dolna linia daty siedzi na linii pisma godziny.
+                    Layout.bottomMargin: (strataTime.height - strataTime.baselineOffset) - (strataDate.height - strataDate.baselineOffset)
+                    Txt {
+                        Layout.alignment: Qt.AlignRight
+                        text: root.now.toLocaleDateString(root.loc, "dddd")
+                        face: look.display; color: look.clay
+                        font.pixelSize: clock.small; font.weight: Font.DemiBold
+                    }
+                    Txt {
+                        id: strataDate
+                        Layout.alignment: Qt.AlignRight
+                        text: root.cfg.dateFormat === "iso" ? Qt.formatDate(root.now, "yyyy-MM-dd")
+                            : root.now.toLocaleDateString(root.loc, root.cfg.dateFormat === "short" ? "d MMM" : "d MMMM")
+                        face: look.display; color: look.muted
+                        font.pixelSize: clock.small
+                    }
                 }
+            }
+            DayDune {
+                visible: clock.layered
+                Layout.fillWidth: true
+                Layout.topMargin: 2
+                progress: (root.minute.getHours() * 60 + root.minute.getMinutes()) / 1440
+                color: look.clay
+                tick: look.ink
             }
         }
     }
@@ -393,7 +451,7 @@ PlasmoidItem {
             theme: pal
             shown: root.plan !== null
             title: root.cfg.planTitle || root.tr("Zajęcia")
-            accent: pal.teal
+            accent: look.teal
             readonly property var list: root.plan && root.plan.zajecia ? root.plan.zajecia.filter(z => Date.parse(z.koniec) > root.minute) : []
             readonly property var cur: list.length ? list[0] : null
             readonly property real startMs: cur ? Date.parse(cur.start) : 0
@@ -405,7 +463,7 @@ PlasmoidItem {
             readonly property real dateW: Math.ceil(nextDates.reduce((w, t) => Math.max(w, dateMetrics.advanceWidth(t)), 0)) + 2
             FontMetrics {
                 id: dateMetrics
-                font.pixelSize: 12
+                font.pixelSize: classCard.layered ? 13 : 12
                 font.family: Plasmoid.configuration.fontFamily || Qt.application.font.family
                 font.features: { "tnum": 1 }
             }
@@ -414,16 +472,42 @@ PlasmoidItem {
             clickable: true
             onTapped: root.openPlan()
 
+            // Warstwy: termin nad tytułem, pod nim forma i miejsce.
+            function cap(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : ""; }
+            ColumnLayout {
+                Layout.fillWidth: true
+                visible: classCard.layered && classCard.cur !== null
+                spacing: 2
+                Txt {
+                    Layout.fillWidth: true
+                    text: !classCard.cur ? "" : classCard.live ? root.tr("Trwa · do %1", root.hm(classCard.cur.koniec))
+                        : classCard.cap(root.dayName(classCard.cur.start)) + " · " + root.hm(classCard.cur.start) + "–" + root.hm(classCard.cur.koniec)
+                    face: look.display; color: look.clay; font.pixelSize: 14; font.weight: Font.DemiBold
+                }
+                Txt {
+                    Layout.fillWidth: true
+                    text: classCard.cur ? classCard.cur.przedmiot : ""
+                    face: look.display; color: look.ink; font.pixelSize: 18; font.weight: Font.DemiBold
+                    wrapMode: Text.WordWrap; maximumLineCount: 3; elide: Text.ElideRight
+                }
+                Txt {
+                    Layout.fillWidth: true
+                    readonly property var where: classCard.cur ? [classCard.cap(root.formName(classCard.cur.forma || "")), classCard.cur.sala ? root.tr("sala %1", classCard.cur.sala) : "", classCard.cur.budynek, classCard.cur.uwaga].filter(p => p) : []
+                    visible: where.length > 0
+                    text: where.join(" · ")
+                    color: look.muted; font.pixelSize: 13; wrapMode: Text.WordWrap
+                }
+            }
             RowLayout {
                 Layout.fillWidth: true
-                visible: classCard.cur !== null
+                visible: !classCard.layered && classCard.cur !== null
                 spacing: 12
                 Rectangle {
                     Layout.alignment: Qt.AlignTop
                     visible: !!classCard.cur && !!classCard.cur.forma
                     implicitWidth: 34; implicitHeight: 34; radius: 10
-                    color: pal.tint(pal.teal, 0.16)
-                    Txt { anchors.centerIn: parent; text: classCard.cur ? classCard.cur.forma || "" : ""; color: pal.teal; font.pixelSize: 15; font.weight: Font.DemiBold }
+                    color: look.tint(look.teal, 0.16)
+                    Txt { anchors.centerIn: parent; text: classCard.cur ? classCard.cur.forma || "" : ""; color: look.teal; font.pixelSize: 15; font.weight: Font.DemiBold }
                 }
                 ColumnLayout {
                     Layout.fillWidth: true
@@ -431,40 +515,58 @@ PlasmoidItem {
                     Txt {
                         Layout.fillWidth: true
                         text: classCard.cur ? classCard.cur.przedmiot : ""
-                        color: pal.ink; font.pixelSize: 15; font.weight: Font.Medium
+                        color: look.ink; font.pixelSize: 15; font.weight: Font.Medium
                         wrapMode: Text.WordWrap; maximumLineCount: 2; elide: Text.ElideRight
                     }
                     Txt {
                         Layout.fillWidth: true
                         text: classCard.cur ? root.dayName(classCard.cur.start) + " " + root.hm(classCard.cur.start) + "–" + root.hm(classCard.cur.koniec)
                             + (classCard.cur.forma ? " · " + root.formName(classCard.cur.forma) : "") : ""
-                        color: pal.muted; font.pixelSize: 12
+                        color: look.muted; font.pixelSize: 12
                     }
                     Txt {
                         Layout.fillWidth: true
                         readonly property var where: classCard.cur ? [classCard.cur.sala ? root.tr("sala %1", classCard.cur.sala) : "", classCard.cur.budynek, classCard.cur.uwaga].filter(p => p) : []
                         visible: where.length > 0
                         text: where.join(" · ")
-                        color: pal.faint; font.pixelSize: 12; elide: Text.ElideRight
+                        color: look.faint; font.pixelSize: 12; elide: Text.ElideRight
                     }
                 }
             }
             // Kolejne pozycje
-            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: pal.track; visible: classCard.list.length > 1 && root.cfg.planCount > 0 }
+            Rectangle { Layout.fillWidth: true; implicitHeight: 1; color: look.track; visible: classCard.list.length > 1 && root.cfg.planCount > 0 }
             Repeater {
                 model: Math.min(root.cfg.planCount, Math.max(0, classCard.list.length - 1))
                 delegate: RowLayout {
                     required property int index
                     readonly property var cls: classCard.list[index + 1] || null
                     Layout.fillWidth: true
-                    spacing: 8
+                    spacing: classCard.layered ? 10 : 8
                     Txt {
                         text: classCard.nextDates[index] || ""
-                        color: pal.muted; font.pixelSize: 12; font.features: { "tnum": 1 }
+                        color: look.muted; font.pixelSize: classCard.layered ? 13 : 12; font.features: { "tnum": 1 }
                         Layout.preferredWidth: classCard.dateW
+                        Layout.alignment: Qt.AlignTop
                     }
-                    Txt { text: cls ? cls.przedmiot + (cls.forma ? " (" + cls.forma + ")" : "") : ""; color: pal.ink; font.pixelSize: 12; elide: Text.ElideRight; Layout.fillWidth: true }
-                    Txt { text: cls ? cls.sala || "" : ""; color: pal.faint; font.pixelSize: 12 }
+                    // W warstwach nazwa w całości, a forma i sala w drugiej linii.
+                    ColumnLayout {
+                        Layout.fillWidth: true
+                        spacing: 1
+                        Txt {
+                            Layout.fillWidth: true
+                            text: !cls ? "" : classCard.layered ? cls.przedmiot : cls.przedmiot + (cls.forma ? " (" + cls.forma + ")" : "")
+                            color: look.ink; font.pixelSize: classCard.layered ? 13 : 12
+                            wrapMode: classCard.layered ? Text.WordWrap : Text.NoWrap
+                            elide: Text.ElideRight
+                        }
+                        Txt {
+                            Layout.fillWidth: true
+                            visible: classCard.layered && text !== ""
+                            text: cls ? [root.formName(cls.forma || ""), cls.sala ? root.tr("sala %1", cls.sala) : ""].filter(p => p).join(" · ") : ""
+                            color: look.muted; font.pixelSize: 13
+                        }
+                    }
+                    Txt { visible: !classCard.layered; text: cls ? cls.sala || "" : ""; color: look.faint; font.pixelSize: 12; Layout.alignment: Qt.AlignTop }
                 }
             }
             Txt {
@@ -472,13 +574,13 @@ PlasmoidItem {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 text: root.tr("Nic zaplanowanego.")
-                color: pal.muted; font.pixelSize: 12
+                color: look.muted; font.pixelSize: 12
             }
             Txt {
                 visible: !!root.plan && !!root.plan.pobrano && root.minute - Date.parse(root.plan.pobrano) > 3 * 86400000
                 Layout.fillWidth: true
                 text: visible ? root.tr("plan z %1, do odświeżenia", new Date(Date.parse(root.plan.pobrano)).toLocaleDateString(root.loc, "d.MM")) : ""
-                color: pal.warn; font.pixelSize: 11
+                color: look.warn; font.pixelSize: classCard.layered ? 13 : 11
             }
         }
     }
@@ -490,19 +592,40 @@ PlasmoidItem {
             id: claude
             theme: pal
             title: root.tr("Limity Claude")
-            accent: pal.clay
+            accent: look.clay
             readonly property var usage: root.status.usage || null
             note: usage ? root.tr("odczyt %1 temu", root.span(root.minute - usage.at)) : ""
+            // Warstwy: limity obok siebie jako duże liczby z wydmą.
+            GridLayout {
+                Layout.fillWidth: true
+                visible: claude.layered && !!claude.usage
+                columns: 2
+                columnSpacing: 18
+                rowSpacing: 12
+                Repeater {
+                    model: claude.layered && claude.usage ? claude.usage.limits.length : 0
+                    delegate: Stat {
+                        required property int index
+                        readonly property var lim: claude.usage ? claude.usage.limits[index] : null
+                        theme: look
+                        label: lim ? "Claude · " + root.limitName(lim.kind).toLowerCase() : ""
+                        value: lim ? lim.percent : 0
+                        detail: lim && lim.resetsAt ? root.tr("reset za %1", root.span(Date.parse(lim.resetsAt) - root.minute)) : ""
+                        dune: true
+                        seed: index
+                    }
+                }
+            }
             Repeater {
-                model: claude.usage ? claude.usage.limits.length : 0
+                model: !claude.layered && claude.usage ? claude.usage.limits.length : 0
                 delegate: MeterRow {
                     required property int index
                     readonly property var lim: claude.usage ? claude.usage.limits[index] : null
-                    theme: pal
+                    theme: look
                     name: lim ? root.limitName(lim.kind) : ""
                     detail: lim && lim.resetsAt ? root.tr("reset za %1", root.span(Date.parse(lim.resetsAt) - root.minute)) : ""
                     value: lim ? lim.percent : 0
-                    color: pal.clay
+                    color: look.clay
                     nameSize: 14
                     barHeight: 8
                 }
@@ -512,7 +635,7 @@ PlasmoidItem {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 text: root.tr("Brak odczytu. Pojawi się po pierwszej odpowiedzi Claude (potrzebna wtyczka Claudbar).")
-                color: pal.muted; font.pixelSize: 12
+                color: look.muted; font.pixelSize: 12
             }
         }
     }
@@ -523,12 +646,25 @@ PlasmoidItem {
         Card {
             theme: pal
             title: root.tr("Procesor i grafika")
-            accent: pal.sky
+            accent: look.sky
             note: root.gpuLive ? root.gpuTitle : (root.gpuTitle ? root.gpuTitle + ", " : "") + root.tr("odczyt na zasilaczu")
+            readonly property color cpuHot: root.num(cpuTemp) >= root.cfg.tempAlert ? look.alert : root.num(cpuTemp) >= root.cfg.tempWarn ? look.warn : look.muted
+            readonly property color gpuHot: root.gpuNum(gpuTemp) >= root.cfg.tempAlert ? look.alert : root.gpuNum(gpuTemp) >= root.cfg.tempWarn ? look.warn : look.muted
             RowLayout {
                 Layout.fillWidth: true
-                Gauge { theme: pal; name: "CPU"; value: root.num(cpu); temp: root.num(cpuTemp); tempText: root.temp(cpuTemp); tempWarn: root.cfg.tempWarn; tempAlert: root.cfg.tempAlert; color: pal.sky }
-                Gauge { theme: pal; name: "GPU"; value: root.gpuNum(gpuUse); temp: root.gpuNum(gpuTemp); tempText: root.gpuLive ? root.temp(gpuTemp) : "—"; tempWarn: root.cfg.tempWarn; tempAlert: root.cfg.tempAlert; color: pal.sage }
+                visible: layered
+                spacing: 18
+                Stat { theme: look; label: root.tr("Procesor"); value: root.num(cpu); detail: root.temp(cpuTemp); detailColor: cpuHot }
+                Stat {
+                    theme: look; label: root.tr("Grafika"); value: root.gpuNum(gpuUse); detailColor: gpuHot
+                    detail: root.gpuLive ? [root.temp(gpuTemp), root.gpuTitle].filter(p => p).join(" · ") : root.tr("odczyt na zasilaczu")
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                visible: !layered
+                Gauge { theme: look; name: "CPU"; value: root.num(cpu); temp: root.num(cpuTemp); tempText: root.temp(cpuTemp); tempWarn: root.cfg.tempWarn; tempAlert: root.cfg.tempAlert; color: look.sky }
+                Gauge { theme: look; name: "GPU"; value: root.gpuNum(gpuUse); temp: root.gpuNum(gpuTemp); tempText: root.gpuLive ? root.temp(gpuTemp) : "—"; tempWarn: root.cfg.tempWarn; tempAlert: root.cfg.tempAlert; color: look.sage }
             }
             clickable: root.cfg.clickActions
             onTapped: root.run("plasma-systemmonitor")
@@ -541,18 +677,18 @@ PlasmoidItem {
         Card {
             theme: pal
             title: root.tr("Pamięć")
-            accent: pal.dusk
-            MeterRow { theme: pal; name: "RAM"; value: root.num(ram); detail: root.gib(root.num(ramUsed)) + " / " + root.gib(root.num(ramTotal)) + " GiB"; color: pal.dusk }
+            accent: look.dusk
+            MeterRow { theme: look; name: "RAM"; value: root.num(ram); detail: root.gib(root.num(ramUsed)) + " / " + root.gib(root.num(ramTotal)) + " GiB"; color: look.dusk }
             MeterRow {
-                theme: pal; visible: root.cfg.showSwap && root.num(swapTotal) > 0
-                name: root.tr("Wymiana"); value: root.num(swap); detail: root.gib(root.num(swapUsed)) + " / " + root.gib(root.num(swapTotal)) + " GiB"; color: pal.teal
+                theme: look; visible: root.cfg.showSwap && root.num(swapTotal) > 0
+                name: root.tr("Wymiana"); value: root.num(swap); detail: root.gib(root.num(swapUsed)) + " / " + root.gib(root.num(swapTotal)) + " GiB"; color: look.teal
             }
             MeterRow {
-                theme: pal; visible: root.cfg.showVram
+                theme: look; visible: root.cfg.showVram
                 name: "VRAM"; value: root.gpuNum(vramTotal) > 0 ? 100 * root.gpuNum(vramUsed) / root.gpuNum(vramTotal) : 0
-                detail: root.gpuLive ? root.txt(vramUsed) + " / " + root.txt(vramTotal) : "—"; color: pal.sage
+                detail: root.gpuLive ? root.txt(vramUsed) + " / " + root.txt(vramTotal) : "—"; color: look.sage
             }
-            MeterRow { theme: pal; name: root.tr("Dysk"); value: root.num(disk); detail: root.tr("wolne %1", root.txt(diskFree)); color: pal.gold }
+            MeterRow { theme: look; name: root.tr("Dysk"); value: root.num(disk); detail: root.tr("wolne %1", root.txt(diskFree)); color: look.gold }
             clickable: root.cfg.clickActions
             onTapped: root.run("plasma-systemmonitor")
         }
@@ -564,15 +700,27 @@ PlasmoidItem {
         Card {
             theme: pal
             title: root.tr("Sieć")
-            accent: pal.sky
+            accent: look.sky
             note: root.cfg.netIface && root.cfg.netIface !== "all" ? root.cfg.netIface : ""
             RowLayout {
                 Layout.fillWidth: true
-                Txt { text: "↓ " + root.speed(root.num(netDown)); color: pal.sky; font.pixelSize: 15; font.weight: Font.Medium; font.features: { "tnum": 1 } }
+                visible: !layered
+                Txt { text: "↓ " + root.speed(root.num(netDown)); color: look.sky; font.pixelSize: 15; font.weight: Font.Medium; font.features: { "tnum": 1 } }
                 Item { Layout.fillWidth: true }
-                Txt { text: "↑ " + root.speed(root.num(netUp)); color: pal.clay; font.pixelSize: 15; font.weight: Font.Medium; font.features: { "tnum": 1 } }
+                Txt { text: "↑ " + root.speed(root.num(netUp)); color: look.clay; font.pixelSize: 15; font.weight: Font.Medium; font.features: { "tnum": 1 } }
             }
-            Spark { Layout.fillWidth: true; visible: root.cfg.netGraph; series: [root.down, root.up]; colors: [pal.sky, pal.clay] }
+            // Warstwy: legenda z kropkami zamiast strzałek.
+            RowLayout {
+                Layout.fillWidth: true
+                visible: layered
+                spacing: 7
+                Rectangle { implicitWidth: 7; implicitHeight: 7; radius: 4; color: look.sky }
+                Txt { text: root.tr("pobieranie") + " <b>" + root.speed(root.num(netDown)) + "</b>"; textFormat: Text.StyledText; color: look.ink; font.pixelSize: 13; font.features: { "tnum": 1 } }
+                Item { Layout.fillWidth: true }
+                Rectangle { implicitWidth: 7; implicitHeight: 7; radius: 4; color: look.clay }
+                Txt { text: root.tr("wysyłanie") + " <b>" + root.speed(root.num(netUp)) + "</b>"; textFormat: Text.StyledText; color: look.ink; font.pixelSize: 13; font.features: { "tnum": 1 } }
+            }
+            Spark { Layout.fillWidth: true; visible: root.cfg.netGraph; series: [root.down, root.up]; colors: [look.sky, look.clay]; fillAlpha: layered ? 0.22 : 0.12; implicitHeight: layered ? 40 : 46 }
             clickable: root.cfg.clickActions
             onTapped: root.run("kcmshell6 kcm_networkmanagement")
         }
@@ -585,58 +733,96 @@ PlasmoidItem {
             id: power
             theme: pal
             title: root.tr("Zasilanie")
-            accent: pal.gold
+            accent: look.gold
             readonly property bool hasBat: root.status.bat !== undefined && root.status.bat !== null
             readonly property real bat: root.status.bat || 0
             readonly property bool ac: root.status.ac === 1
             readonly property bool hasHeadset: root.status.headsetPct !== undefined && root.status.headsetPct !== null
             shown: hasBat || hasHeadset || root.profileName(root.status.profile) !== ""
             note: root.profileName(root.status.profile)
+            // Opis trybu ładowania albo wynik jego zmiany; w warstwach stoi pod tytułem.
+            readonly property var chargeMode: root.chargeModes.find(m => m.value === root.status.charge)
+            readonly property string chargeText: root.status.hasCharge !== 1 ? ""
+                : root.chargeFailed ? "⚠ " + root.tr("Nie udało się zmienić trybu ładowania.")
+                : root.chargeDone ? "✓ " + root.tr("Włączono: %1", root.chargeDone)
+                : chargeMode ? chargeMode.hint : ""
+            readonly property color chargeColor: root.chargeFailed ? look.alert : root.chargeDone ? look.sage : look.faint
+            readonly property color batColor: bat <= 15 ? look.alert : bat <= 30 ? look.warn : look.ink
             RowLayout {
                 Layout.fillWidth: true
-                visible: power.hasBat
+                visible: power.layered
+                spacing: 12
+                Icon { name: power.ac || !power.hasBat ? "plug" : "battery"; color: look.ink; size: 18; Layout.alignment: Qt.AlignVCenter }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 1
+                    Txt {
+                        Layout.fillWidth: true
+                        text: !power.hasBat ? root.tr("Zasilanie sieciowe") : (power.ac ? root.tr("Zasilacz") : root.tr("Bateria"))
+                            + (!power.ac && root.status.watts > 0.5 ? " · " + root.dec(root.status.watts, 1) + " W" : "")
+                        face: look.display; color: look.ink; font.pixelSize: 18; font.weight: Font.DemiBold; elide: Text.ElideRight
+                    }
+                    Txt {
+                        Layout.fillWidth: true
+                        visible: text !== ""
+                        text: power.chargeText
+                        color: root.chargeFailed || root.chargeDone ? power.chargeColor : look.muted
+                        font.pixelSize: 13; wrapMode: Text.WordWrap
+                    }
+                }
+                RowLayout {
+                    visible: power.hasBat
+                    spacing: 2
+                    Txt { text: Math.round(power.bat); face: look.display; color: power.batColor; font.pixelSize: 38; font.weight: Font.Light; font.features: { "tnum": 1 }; Layout.alignment: Qt.AlignBaseline }
+                    Txt { text: "%"; face: look.display; color: look.muted; font.pixelSize: 18; Layout.alignment: Qt.AlignBaseline }
+                }
+            }
+            RowLayout {
+                Layout.fillWidth: true
+                visible: power.hasBat && !power.layered
                 Txt {
                     text: (power.ac ? "🔌 " + root.tr("Zasilacz") : "🔋 " + root.tr("Bateria"))
                         + (!power.ac && root.status.watts > 0.5 ? " · " + root.dec(root.status.watts, 1) + " W" : "")
-                    color: pal.ink; font.pixelSize: 13; font.weight: Font.Medium
+                    color: look.ink; font.pixelSize: 13; font.weight: Font.Medium
                 }
                 Item { Layout.fillWidth: true }
-                Txt { text: root.pct(power.bat); color: power.bat <= 15 ? pal.alert : power.bat <= 30 ? pal.warn : pal.ink; font.pixelSize: 13; font.weight: Font.DemiBold }
+                Txt { text: root.pct(power.bat); color: power.bat <= 15 ? look.alert : power.bat <= 30 ? look.warn : look.ink; font.pixelSize: 13; font.weight: Font.DemiBold }
             }
-            Bar { Layout.fillWidth: true; visible: power.hasBat; implicitHeight: 6; value: power.bat; color: power.bat <= 15 ? pal.alert : power.bat <= 30 ? pal.warn : pal.sage; track: pal.track }
+            Bar { Layout.fillWidth: true; visible: power.hasBat && !power.layered; implicitHeight: 6; value: power.bat; color: power.bat <= 15 ? look.alert : power.bat <= 30 ? look.warn : look.sage; track: look.track }
             Txt {
-                visible: !power.hasBat && !power.hasHeadset
+                visible: !power.hasBat && !power.hasHeadset && !power.layered
                 text: "🔌 " + root.tr("Zasilanie sieciowe")
-                color: pal.ink; font.pixelSize: 13; font.weight: Font.Medium
+                color: look.ink; font.pixelSize: 13; font.weight: Font.Medium
             }
             // Tryb ładowania
             ModeRow {
-                theme: pal
+                theme: look
                 visible: root.status.hasCharge === 1
                 modes: root.chargeModes
                 current: root.status.charge || ""
                 busy: root.chargeBusy
-                accent: pal.gold
+                accent: power.layered ? look.ink : look.gold
+                Layout.topMargin: power.layered ? 4 : 0
                 onPicked: (arg, label) => root.setCharge(arg, label)
             }
             Txt {
                 Layout.fillWidth: true
-                visible: root.status.hasCharge === 1
+                visible: root.status.hasCharge === 1 && !power.layered
                 wrapMode: Text.WordWrap
-                readonly property var mode: root.chargeModes.find(m => m.value === root.status.charge)
-                text: root.chargeFailed ? "⚠ " + root.tr("Nie udało się zmienić trybu ładowania.")
-                    : root.chargeDone ? "✓ " + root.tr("Włączono: %1", root.chargeDone)
-                    : mode ? mode.hint : ""
-                color: root.chargeFailed ? pal.alert : root.chargeDone ? pal.sage : pal.faint
+                text: power.chargeText
+                color: power.chargeColor
                 font.pixelSize: 11
             }
             RowLayout {
                 Layout.fillWidth: true
                 visible: power.hasHeadset
-                Txt { text: "🎧 " + (root.status.headset || root.tr("Słuchawki")); color: pal.ink; font.pixelSize: 13; elide: Text.ElideRight; Layout.fillWidth: true }
+                Layout.topMargin: power.layered ? 4 : 0
+                spacing: power.layered ? 12 : 5
+                Icon { visible: power.layered; name: "headset"; color: look.ink; size: 18 }
+                Txt { text: (power.layered ? "" : "🎧 ") + (root.status.headset || root.tr("Słuchawki")); color: look.ink; font.pixelSize: 13; elide: Text.ElideRight; Layout.fillWidth: true }
                 Txt {
                     readonly property real charge: root.status.headsetPct || 0
-                    text: root.pct(charge); color: charge <= 15 ? pal.alert : charge <= 30 ? pal.warn : pal.ink; font.pixelSize: 13; font.weight: Font.DemiBold
+                    text: root.pct(charge); color: charge <= 15 ? look.alert : charge <= 30 ? look.warn : look.ink; font.pixelSize: 13; font.weight: Font.DemiBold
                 }
             }
         }
@@ -650,31 +836,33 @@ PlasmoidItem {
             theme: pal
             shown: root.status.hasGpu === 1
             title: root.tr("Tryb grafiki")
-            accent: pal.sage
+            accent: look.sage
             readonly property string set: root.status.gpuSet || ""
             readonly property string active: root.status.gpuNow || ""
             readonly property bool pending: set !== "" && active !== "" && set !== active
             readonly property var mode: root.gpuModes.find(m => m.value === set)
             note: root.tr("teraz: %1", root.gpuLabel(active))
             ModeRow {
-                theme: pal
+                theme: look
                 modes: root.gpuModes
                 current: root.gpuBusy ? root.gpuWanted : gpuCard.set
                 busy: root.gpuBusy
-                accent: pal.sage
+                accent: gpuCard.layered ? look.ink : look.sage
                 onPicked: (arg, label) => root.setGpu(arg)
             }
             Txt {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 readonly property string missed: root.status.gpuFail || ""
+                // W warstwach zwykły opis aktywnego trybu odpada; zostają zapis, błędy i oczekiwanie na restart.
+                visible: text !== "" && (!gpuCard.layered || root.gpuBusy || root.gpuFailed || gpuCard.pending || missed !== "")
                 text: root.gpuBusy ? "… " + root.tr("Zapisuję: %1. To może potrwać do pół minuty.", root.gpuLabel(root.gpuWanted))
                     : root.gpuFailed ? "⚠ " + root.tr("Nie udało się zapisać trybu grafiki.")
                     : gpuCard.pending ? "✓ " + root.tr("Zapisano: %1. Zadziała po restarcie.", root.gpuLabel(gpuCard.set))
                     : missed ? "⚠ " + root.tr("Po restarcie nadal %1, firmware nie włączył %2.", root.gpuLabel(gpuCard.active), root.gpuLabel(missed))
                     : gpuCard.mode ? "✓ " + root.tr("Aktywny: %1", gpuCard.mode.label) + ", " + gpuCard.mode.hint : ""
-                color: root.gpuBusy ? pal.ink : root.gpuFailed || missed ? pal.alert : gpuCard.pending ? pal.warn : pal.faint
-                font.pixelSize: 11
+                color: root.gpuBusy ? look.ink : root.gpuFailed || missed ? look.alert : gpuCard.pending ? look.warn : look.faint
+                font.pixelSize: gpuCard.layered ? 13 : 11
             }
         }
     }
@@ -689,7 +877,7 @@ PlasmoidItem {
             readonly property bool on: !!root.status.vpn
             readonly property bool blocking: root.status.ks === 1 && !on
             shown: root.vpnTool || on || root.vpnList.length > 0
-            accent: blocking ? pal.alert : on ? pal.sage : pal.faint
+            accent: blocking ? look.alert : on ? look.sage : look.faint
             readonly property bool proton: root.vpnNow === root.protonName
             note: root.vpnRolling ? root.tr("zmiana IP…")
                 : root.vpnBusy ? (on && !root.vpnPick ? root.tr("rozłączanie…") : root.tr("łączenie…"))
@@ -701,33 +889,56 @@ PlasmoidItem {
                 Layout.fillWidth: true
                 spacing: 12
                 Txt {
+                    visible: !vpn.layered
                     text: vpn.on ? "🛡" : "○"
-                    color: vpn.on ? pal.sage : pal.faint
+                    color: vpn.on ? look.sage : look.faint
                     font.pixelSize: 22
+                }
+                Icon {
+                    visible: vpn.layered
+                    name: vpn.on ? "shield" : "shieldOff"
+                    color: vpn.blocking ? look.alert : vpn.on ? look.sage : look.muted
+                    size: 22
                 }
                 Column {
                     Layout.fillWidth: true
-                    Txt { text: !vpn.on ? root.tr("Bez VPN-a") : vpn.proton ? root.tr("Chroniony") : root.tr("Połączono"); color: pal.ink; font.pixelSize: 15; font.weight: Font.Medium }
+                    Txt {
+                        text: !vpn.on ? root.tr("Bez VPN-a") : vpn.proton ? root.tr("Chroniony") : root.tr("Połączono")
+                        face: vpn.layered ? look.display : ""
+                        color: vpn.layered && vpn.on ? look.sage : look.ink
+                        font.pixelSize: vpn.layered ? 18 : 15; font.weight: vpn.layered ? Font.DemiBold : Font.Medium
+                    }
                     Txt {
                         visible: text !== ""
-                        text: !root.vpnTool ? (vpn.on ? root.tr("ruch idzie szyfrowanym tunelem") : "")
+                        // W warstwach podtytuł podaje serwer albo stan zamiast opisu tunelu.
+                        text: vpn.layered ? (root.vpnBusy || !vpn.on ? vpn.note
+                                : vpn.proton ? root.protonName + " · " + root.status.vpn.replace("ProtonVPN ", "") : root.vpnNow)
+                            : !root.vpnTool ? (vpn.on ? root.tr("ruch idzie szyfrowanym tunelem") : "")
                             : !vpn.on ? root.tr("wraca sam po zmianie sieci")
                             : vpn.proton ? root.tr("ruch idzie szyfrowanym tunelem") : root.tr("po zmianie sieci wraca Proton")
-                        color: pal.faint; font.pixelSize: 11
+                        color: vpn.layered ? look.muted : look.faint
+                        font.pixelSize: vpn.layered ? 13 : 11
                     }
                 }
                 // Nowe IP
                 Rectangle {
                     visible: root.vpnTool && vpn.proton
-                    implicitWidth: rollText.implicitWidth + 22; implicitHeight: 30; radius: 15
-                    color: rollMouse.containsMouse && !root.vpnBusy ? pal.tint(pal.sage, 0.28) : pal.track
+                    implicitWidth: rollRow.implicitWidth + 22; implicitHeight: vpn.layered ? 30 : 30; radius: height / 2
+                    color: vpn.layered ? (rollMouse.containsMouse && !root.vpnBusy ? look.tint(look.ink, 0.12) : "transparent")
+                        : rollMouse.containsMouse && !root.vpnBusy ? look.tint(look.sage, 0.28) : look.track
+                    border.width: vpn.layered ? 1 : 0
+                    border.color: look.tint(look.ink, 0.45)
                     opacity: root.vpnBusy ? 0.55 : 1
                     Behavior on color { ColorAnimation { duration: 200 } }
-                    Txt {
-                        id: rollText
+                    Row {
+                        id: rollRow
                         anchors.centerIn: parent
-                        text: "↻ " + root.tr("Nowe IP")
-                        color: pal.ink; font.pixelSize: 12; font.weight: Font.Medium
+                        spacing: 5
+                        Icon { visible: vpn.layered; name: "refresh"; color: look.ink; size: 13; anchors.verticalCenter: parent.verticalCenter }
+                        Txt {
+                            text: (vpn.layered ? "" : "↻ ") + root.tr("Nowe IP")
+                            color: look.ink; font.pixelSize: vpn.layered ? 13 : 12; font.weight: Font.Medium
+                        }
                     }
                     MouseArea {
                         id: rollMouse
@@ -747,20 +958,23 @@ PlasmoidItem {
                     readonly property bool active: root.vpnNow === modelData
                     readonly property bool picking: root.vpnPick === modelData
                     Layout.fillWidth: true
-                    implicitHeight: 30
-                    radius: 10
-                    color: active ? pal.tint(pal.sage, 0.28) : pal.track
+                    implicitHeight: vpn.layered ? 31 : 30
+                    radius: vpn.layered ? height / 2 : 10
+                    color: vpn.layered ? (active ? look.tint(look.ink, 0.14) : "transparent")
+                        : active ? look.tint(look.sage, 0.28) : look.track
+                    border.width: vpn.layered ? 1 : 0
+                    border.color: look.tint(look.ink, active ? 0.5 : 0.28)
                     opacity: root.vpnBusy && !picking ? 0.55 : 1
                     Behavior on color { ColorAnimation { duration: 200 } }
                     RowLayout {
-                        anchors { fill: parent; leftMargin: 10; rightMargin: 10 }
+                        anchors { fill: parent; leftMargin: vpn.layered ? 13 : 10; rightMargin: vpn.layered ? 13 : 10 }
                         spacing: 8
-                        Txt { text: modelData; color: pal.ink; font.pixelSize: 12; font.weight: active ? Font.DemiBold : Font.Normal; elide: Text.ElideRight; Layout.fillWidth: true }
+                        Txt { text: modelData; color: look.ink; font.pixelSize: vpn.layered ? 13 : 12; font.weight: active ? Font.DemiBold : Font.Normal; elide: Text.ElideRight; Layout.fillWidth: true }
                         Txt {
                             text: picking ? root.tr("łączenie…")
                                 : active && pickMouse.containsMouse && !root.vpnBusy ? root.tr("rozłącz")
                                 : active ? "✓ " + root.tr("połączono") : ""
-                            color: active && !pickMouse.containsMouse ? pal.sage : pal.faint; font.pixelSize: 11
+                            color: active && !pickMouse.containsMouse ? look.sage : look.faint; font.pixelSize: vpn.layered ? 13 : 11
                         }
                     }
                     MouseArea {
@@ -778,7 +992,7 @@ PlasmoidItem {
                 visible: root.vpnFailed !== ""
                 wrapMode: Text.WordWrap
                 text: "⚠ " + root.tr("Nie udało się połączyć z %1.", root.vpnFailed)
-                color: pal.alert; font.pixelSize: 11
+                color: look.alert; font.pixelSize: vpn.layered ? 13 : 11
             }
             // Ostrzeżenie o kill switchu
             Rectangle {
@@ -786,13 +1000,13 @@ PlasmoidItem {
                 visible: root.status.ks === 1 && (root.cfg.vpnWarning || vpn.blocking)
                 implicitHeight: ksText.implicitHeight + 14
                 radius: 10
-                color: pal.tint(vpn.blocking ? pal.alert : pal.warn, 0.14)
+                color: look.tint(vpn.blocking ? look.alert : look.warn, 0.14)
                 Txt {
                     id: ksText
                     anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; leftMargin: 10; rightMargin: 10 }
                     wrapMode: Text.WordWrap
-                    font.pixelSize: 12
-                    color: vpn.blocking ? pal.alert : pal.warn
+                    font.pixelSize: vpn.layered ? 13 : 12
+                    color: vpn.blocking ? look.alert : look.warn
                     text: "⚠ " + (vpn.blocking
                         ? root.tr("Kill switch blokuje internet. Włącz VPN, żeby odzyskać połączenie.")
                         : root.tr("Kill switch aktywny: jeśli VPN się zerwie, internet zostanie zablokowany."))
@@ -807,12 +1021,13 @@ PlasmoidItem {
         Card {
             theme: pal
             title: root.tr("System")
-            accent: pal.teal
+            accent: look.teal
             note: root.cfg.showHost ? root.txt(osHost) : ""
-            Line { name: root.tr("System"); value: root.txt(osName) }
-            Line { name: root.tr("Jądro"); value: root.txt(osKernel) }
-            Line { name: "Plasma"; value: root.txt(osPlasma) }
-            Line { name: root.tr("Działa od"); value: root.ok(osUptime) ? root.span(Number(osUptime.value) * 1000) : "—" }
+            leadTitle: true
+            Line { theme: look; name: root.tr("System"); value: root.txt(osName) }
+            Line { theme: look; name: root.tr("Jądro"); value: root.txt(osKernel) }
+            Line { theme: look; name: "Plasma"; value: root.txt(osPlasma) }
+            Line { theme: look; name: root.tr("Działa od"); value: root.ok(osUptime) ? root.span(Number(osUptime.value) * 1000) : "—" }
             clickable: root.cfg.clickActions
             onTapped: root.run("kinfocenter")
         }
@@ -825,7 +1040,8 @@ PlasmoidItem {
             id: procs
             theme: pal
             title: root.tr("Najwięcej pamięci")
-            accent: pal.dusk
+            leadTitle: true
+            accent: look.dusk
             readonly property var list: (root.status.top || []).slice(0, root.cfg.procCount)
             readonly property real total: root.num(ramTotal) || 1
             shown: list.length > 0
@@ -834,11 +1050,11 @@ PlasmoidItem {
                 delegate: MeterRow {
                     required property int index
                     readonly property var item: procs.list[index] || ({ name: "", mb: 0 })
-                    theme: pal
+                    theme: look
                     name: item.name
                     detail: root.size(item.mb * 1048576)
                     value: 100 * item.mb * 1048576 / procs.total
-                    color: pal.dusk
+                    color: look.dusk
                     nameSize: 12
                     barHeight: 4
                 }
@@ -855,12 +1071,13 @@ PlasmoidItem {
             theme: pal
             shown: root.cfg.notes !== ""
             title: root.cfg.notesTitle || root.tr("Notatka")
-            accent: pal.gold
+            leadTitle: true
+            accent: look.gold
             Txt {
                 Layout.fillWidth: true
                 wrapMode: Text.WordWrap
                 text: root.cfg.notes
-                color: pal.ink; font.pixelSize: 13; lineHeight: 1.15
+                color: look.ink; font.pixelSize: 13; lineHeight: 1.15
             }
         }
     }
@@ -872,12 +1089,13 @@ PlasmoidItem {
             theme: pal
             shown: root.cfg.customCommand !== ""
             title: root.cfg.customTitle || root.tr("Własny")
-            accent: pal.clay
+            leadTitle: true
+            accent: look.clay
             Txt {
                 Layout.fillWidth: true
                 wrapMode: Text.WrapAnywhere
                 text: root.customText || "…"
-                color: pal.ink; font.pixelSize: 12; font.family: "monospace"
+                color: look.ink; font.pixelSize: 12; font.family: "monospace"
             }
         }
     }
@@ -958,7 +1176,9 @@ PlasmoidItem {
                     id: column
                     required property int index
                     width: (grid.width - rep.gap * (rep.cols - 1)) / rep.cols
-                    spacing: rep.gap
+                    // Warstwy stykają się ze sobą; nad zaokrąglonym wierzchem stosu zostaje odstęp od krawędzi.
+                    spacing: pal.strata ? 0 : rep.gap
+                    topPadding: pal.strata ? 12 : 0
                     Repeater {
                         model: root.cards.slice(column.index * rep.perCol, (column.index + 1) * rep.perCol)
                         delegate: Loader {
